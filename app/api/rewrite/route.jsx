@@ -20,7 +20,7 @@ export async function GET(req, res) {
     }
     /** STEP ONE: LOAD DOCUMENT */
     const loader = new DirectoryLoader(
-        "tailored-ai-2/data/input_resume",
+        "resumatch-ai/data/input_resume",
         {
           ".pdf": (path) => new PDFLoader(path, "/pdf"),
         }
@@ -53,7 +53,7 @@ export async function POST(req, res) {
     }
     /** STEP ONE: LOAD DOCUMENT */
     const loader = new DirectoryLoader(
-        "/Users/nasirsharaf/Desktop/Sites/next-projects/tailored-ai-2/data/input_resume/",
+        "/Users/nasirsharaf/Desktop/Sites/next-projects/resumatch-ai/data/input_resume/",
         {
           ".pdf": (path) => new PDFLoader(path, "/pdf"),
         }

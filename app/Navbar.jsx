@@ -16,12 +16,12 @@ const Navbar = () => {
   return (
     <nav className="fixed z-10 top-0 bg-gray-50 text-gray-800 w-full p-4 grid grid-cols-2 items-center">
       <a href="/" className={`text-center`}>
-        TAILORED AI
+        RESUMATCH-AI
       </a>
       {isClient && <HamburgerMenu />}{" "}
       {/* Render HamburgerMenu component on the client side */}
       <div className="hidden">
-        <Link href="/tailored">Tailored AI</Link>
+        <Link href="/tailored">Resumatch.ai</Link>
       </div>
     </nav>
   );
