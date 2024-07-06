@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { writeFile } from 'fs/promises'
+import { NextRequest, NextResponse } from 'next/server';
+import { writeFile } from 'fs/promises';
+import {put} from "@vercel/blob";
 
 // export const config = {
 //     api: {
@@ -8,10 +9,9 @@ import { writeFile } from 'fs/promises'
 // };
 
 export async function POST(req, res) {
-  console.log("You are in the resume file")
   const data = await req.formData();  
-  const file = data.get('file')
-  console.log(data)
+  const file = data.get('file');
+  console.log(data);
 
   if (!data) {
     console.log("No file?")
@@ -23,10 +23,17 @@ export async function POST(req, res) {
     
   // With the file data in the buffer, you can do whatever you want with it.
   // For this, we'll just write it to the filesystem in a new location
-  const path = `data/input_resume/${file.name}`
-  await writeFile(path, buffer)
-  console.log(`open ${path} to see the uploaded file`)
+  if (file.name) {
+    const blob = await put(filename, file, {
+      access: "public",
+    })
 
-  return NextResponse.json({ success: true })
+    return NextResponse.json(blob);
+  }
+  // const path = `data/input_resume/${file.name}`
+  // await writeFile(path, buffer)
+  // console.log(`open ${path} to see the uploaded file`)
+
+  // return NextResponse.json({ success: true })
 
 };
