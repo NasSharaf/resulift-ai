@@ -1,4 +1,6 @@
-import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
+// import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
+import { WebPDFLoader } from "@langchain/community/document_loaders/web/pdf";
+import { CheerioWebBaseLoader } from "@langchain/community/document_loaders/web/cheerio";
 import { DirectoryLoader } from "langchain/document_loaders/fs/directory";
 import { Pinecone } from "@pinecone-database/pinecone";
 import { Document } from "@langchain/core/documents";
@@ -14,37 +16,37 @@ import {
 import { NextRequest, NextResponse } from 'next/server';
 import { list } from '@vercel/blob';
 
-export async function GET(req, res) {
-    // Check environment variables
-    if (!process.env.PINECONE_ENVIRONMENT || !process.env.PINECONE_API_KEY) {
-        throw new Error("Pinecone environment or api key vars missing");
-    }
-    /** STEP ONE: LOAD DOCUMENT */
-    const resumes = await list();
-    console.log(resumes);
-    const loader = new DirectoryLoader(
-        "resumatch-ai/data/input_resume",
-        {
-          ".pdf": (path) => new PDFLoader(path, "/pdf"),
-        }
-    );
+// export async function GET(req, res) {
+//     // Check environment variables
+//     if (!process.env.PINECONE_ENVIRONMENT || !process.env.PINECONE_API_KEY) {
+//         throw new Error("Pinecone environment or api key vars missing");
+//     }
+//     /** STEP ONE: LOAD DOCUMENT */
+//     const resumes = await list();
+//     console.log(resumes);
+//     const loader = new DirectoryLoader(
+//         "resumatch-ai/data/input_resume",
+//         {
+//           ".pdf": (path) => new PDFLoader(path, "/pdf"),
+//         }
+//     );
 
-    const docs = await loader.load();
+//     const docs = await loader.load();
 
-    if (docs.length === 0) {
-        console.log("No documents found.");
-        throw new Error("No documents created from the resource.");
-    }
+//     if (docs.length === 0) {
+//         console.log("No documents found.");
+//         throw new Error("No documents created from the resource.");
+//     }
 
-    const splitter = new CharacterTextSplitter({
-        separator: " ",
-        chunkSize: 250,
-        chunkOverlap: 10,
-    });
+//     const splitter = new CharacterTextSplitter({
+//         separator: " ",
+//         chunkSize: 250,
+//         chunkOverlap: 10,
+//     });
 
-    const splitDocs = await splitter.splitDocuments(docs);
+//     const splitDocs = await splitter.splitDocuments(docs);
 
-}
+// }
 
 export async function POST(req, res) {
     const body = await req.json();
@@ -56,13 +58,15 @@ export async function POST(req, res) {
     }
     /** STEP ONE: LOAD DOCUMENT */
     const resumes = await list();
-    console.log(resumes.blobs.pathname);
-    const loader = new DirectoryLoader(
-        resumes.blobs.pathname,
-        {
-          ".pdf": (path) => new PDFLoader(path, "/pdf"),
-        }
-    );
+    let blob = await fetch(resumes.blobs[0].url).then(r => r.blob());
+    console.log(typeof(resumes.blobs[0].url));
+    // const loader = new DirectoryLoader(
+    //     resumes.blobs.url,
+    //     {
+    //       ".pdf": (path) => new PDFLoader(path, "/pdf"),
+    //     }
+    // );
+    const loader = new WebPDFLoader(blob);
 
     const docs = await loader.load();
 
