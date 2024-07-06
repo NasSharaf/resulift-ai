@@ -56,9 +56,9 @@ export async function POST(req, res) {
     }
     /** STEP ONE: LOAD DOCUMENT */
     const resumes = await list();
-    console.log(resumes);
+    console.log(resumes.blobs.pathname);
     const loader = new DirectoryLoader(
-        "/Users/nasirsharaf/Desktop/Sites/next-projects/resumatch-ai/data/input_resume/",
+        resumes.blobs.pathname,
         {
           ".pdf": (path) => new PDFLoader(path, "/pdf"),
         }
