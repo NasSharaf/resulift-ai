@@ -24,7 +24,7 @@ export async function POST(req, res) {
   // With the file data in the buffer, you can do whatever you want with it.
   // For this, we'll just write it to the filesystem in a new location
   if (file.name) {
-    const blob = await put(filename, file, {
+    const blob = await put(file.name, file, {
       access: "public",
     })
 
