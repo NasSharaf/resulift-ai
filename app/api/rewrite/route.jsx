@@ -55,6 +55,8 @@ export async function POST(req, res) {
         throw new Error("Pinecone environment or api key vars missing");
     }
     /** STEP ONE: LOAD DOCUMENT */
+    const resumes = await list();
+    console.log(resumes);
     const loader = new DirectoryLoader(
         "/Users/nasirsharaf/Desktop/Sites/next-projects/resumatch-ai/data/input_resume/",
         {
