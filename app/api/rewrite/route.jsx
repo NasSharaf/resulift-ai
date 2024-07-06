@@ -12,6 +12,7 @@ import {
     SystemMessagePromptTemplate,
   } from "@langchain/core/prompts";
 import { NextRequest, NextResponse } from 'next/server';
+import { list } from '@vercel/blob';
 
 export async function GET(req, res) {
     // Check environment variables
@@ -19,6 +20,8 @@ export async function GET(req, res) {
         throw new Error("Pinecone environment or api key vars missing");
     }
     /** STEP ONE: LOAD DOCUMENT */
+    const resumes = await list();
+    console.log(resumes);
     const loader = new DirectoryLoader(
         "resumatch-ai/data/input_resume",
         {
