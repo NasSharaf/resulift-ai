@@ -4,8 +4,8 @@ import Footer from "./Footer";
 import { instrumentSans } from "./styles/fonts";
 
 export const metadata = {
-  title: "Langchain JavaScript",
-  description: "Learn  the latest AI technologies from Shawn Esquivel.",
+  title: "Resumatch AI",
+  description: "Automatically tailor your resume to a job description with AI",
 };
 
 export default function RootLayout({ children }) {

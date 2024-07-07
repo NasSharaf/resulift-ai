@@ -59,7 +59,6 @@ export async function POST(req, res) {
     /** STEP ONE: LOAD DOCUMENT */
     const resumes = await list();
     let blob = await fetch(resumes.blobs[0].url).then(r => r.blob());
-    console.log(typeof(resumes.blobs[0].url));
     // const loader = new DirectoryLoader(
     //     resumes.blobs.url,
     //     {
@@ -97,12 +96,12 @@ const initChain = async(jobDesc, resumeEmbeddings) => {
     try {
         // initialize model
         const llm = new ChatOpenAI({
-            temperature: 0.3,
+            temperature: 0.2,
             modelName: "gpt-3.5-turbo",
         });
         // initialize chat prompt
         const chatPrompt = ChatPromptTemplate.fromTemplate(
-                "Rewrite my resume: {resumeEmbeddings} to apply for this job description: {jobDesc}."
+                "Do not make anything up. Use the information from my resume: {resumeEmbeddings} to write a resume for this job description: {jobDesc}."
         );
         // initialize chain
         const chain = chatPrompt.pipe(llm);
