@@ -44,13 +44,6 @@ const LargeInput = ({
               {buttonText || "Upload Job Description"}
             </button>
           )}
-
-          <button
-            onClick={handleClear}
-            className={`py-6 px-6 bg-white shadow text-gray-900 font-semibold rounded-full hover:shadow-xl transition-colors duration-200 uppercase ${sourceCodePro.className}`}
-          >
-            {buttonText || "Clear Text"}
-          </button>
         </div>
         
 

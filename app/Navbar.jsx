@@ -18,11 +18,11 @@ const Navbar = () => {
       <a href="/" className={`text-center`}>
         RESUMATCH-AI
       </a>
-      {isClient && <HamburgerMenu />}{" "}
+      {/* {isClient && <HamburgerMenu />}{" "} */}
       {/* Render HamburgerMenu component on the client side */}
-      <div className="hidden">
+      {/* <div className="hidden">
         <Link href="/tailored">Resumatch.ai</Link>
-      </div>
+      </div> */}
     </nav>
   );
 };
