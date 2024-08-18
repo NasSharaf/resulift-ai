@@ -5,7 +5,7 @@ import "./globals.css";
 import Gallery from "./components/Gallery";
 import { pressStart2P, sourceCodePro, instrumentSans } from "./styles/fonts";
 
-import React, { useState, FormEvent } from "react";
+import React, { useState, FormEvent, use } from "react";
 import { NextPage } from "next";
 import PageHeader from "./components/PageHeader";
 import PromptBox from "./components/PromptBox";
@@ -24,6 +24,7 @@ export default function Home() {
   const [file, setFile] = useState();
   const [prompt, setPrompt] = useState("Copy and paste your job description here");
   const [error, setError] = useState(null);
+  const [userID, setUserID] = useState(1);
   const [messages, setMessages] = useState([
     {
       text: "Submit your resume and a job description",
@@ -35,6 +36,10 @@ export default function Home() {
 
   const handlePromptChange = (e) => {
     setPrompt(e.target.value);
+  };
+
+  const handleUserIDChange = (e) => {
+    setUserID(e.target.value)
   };
 
   const handleSubmitJobDesc = async () => {
@@ -50,7 +55,7 @@ export default function Home() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ jobDesc: prompt, firstMsg }),
+        body: JSON.stringify({ jobDesc: prompt, firstMsg, userID }),
       });
 
       if (!response.ok) {
@@ -119,6 +124,10 @@ export default function Home() {
                       buttonText=" Upload Resumes 📂"
                   /> */}
               </ButtonContainer>
+              <select value={userID} onChange={handleUserIDChange}>
+                    <option value={1}>Nasir</option>
+                    <option value={2}>Maysum</option>
+              </select>
             </>
           }
           centerChildren={

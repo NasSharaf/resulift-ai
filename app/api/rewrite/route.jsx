@@ -49,6 +49,7 @@ export async function POST(req, res) {
     });
 
     const pineconeIndex = client.Index(process.env.PINECONE_INDEX);
+    console.log(pineconeIndex);
 
     await PineconeStore.fromDocuments(
         splitDocs, 
@@ -89,13 +90,14 @@ const initChain = async(jobDesc, resume) => {
 
         // initialize model
         const llm = new ChatOpenAI({
-            temperature: 0,
+            temperature: 0.1,
             modelName: "gpt-3.5-turbo",
         });
 
         // initialize chat prompt
         // Create a system & human prompt for the chat model
-        const SYSTEM_TEMPLATE = `Display the following bits of context and then answer the questions. Do not make anything up.
+        const SYSTEM_TEMPLATE = `Display the following bits of context and then answer the questions. 
+        Do not make anything up.
         ----------------
         {context}`;
 
@@ -116,7 +118,7 @@ const initChain = async(jobDesc, resume) => {
         ])
 
         // return the response
-        const response = await chain.invoke("What is the name person in this resume and what expereince do they have?");
+        const response = await chain.invoke("What is the name of the person in this resume and what did they do?");
         return response
     } catch (error) {
         console.error(
