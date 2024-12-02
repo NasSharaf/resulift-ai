@@ -7,7 +7,7 @@ const PageHeader = ({ heading, boldText, description }) => {
       <h1 className={`${pressStart2P.className} mb-10 text-4xl uppercase`}>
         {heading}
       </h1>
-      <p className={`${instrumentSans.className} mb-10`}>
+      <p className={`${instrumentSans.className} mb-10 mr-2`}>
         <strong>{boldText}</strong> {description}
       </p>{" "}
     </>

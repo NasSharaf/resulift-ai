@@ -1,5 +1,6 @@
 import React from "react";
 import { sourceCodePro } from "../styles/fonts";
+import { pressStart2P, instrumentSans } from "../styles/fonts";
 
 const LargeInput = ({
   prompt,
@@ -11,6 +12,8 @@ const LargeInput = ({
   error,
   disableButton,
   labelText,
+  userID,
+  handleUserIDChange
 }) => {
   const handleKeyDown = (e) => {
     if (e.key === "Enter") {
@@ -22,9 +25,23 @@ const LargeInput = ({
       <div className="bg-white p-10 rounded-3xl shadow-lg mb-8 overflow-y-auto h-[750px] max-h-[750px] flex flex-col space-y-4 justify-end">
         {labelText && (
           <label htmlFor="" className="mr-4">
-            {labelText}
+            <strong>{labelText}</strong>
           </label>
         )}
+
+        {/* <p className={`${instrumentSans.className} mb-10`}>
+          <strong>Step 2</strong> Select the resume you wish to use here: 
+        </p> */}
+
+        <select 
+        value={userID} 
+        onChange={handleUserIDChange}
+        className={`py-6 px-6 bg-white shadow text-gray-900 font-semibold rounded-full hover:shadow-xl transition-colors duration-200 uppercase ${sourceCodePro.className}`}
+        >
+          <option value={"( Default )"}>""</option>
+          <option value={'Nasir Sharaf Resume.pdf'}>Nasir Sharaf Resume.pdf</option>
+          <option value={'Maysum_Chaudhri_Resume_2024.pdf'}>Maysum_Chaudhri_Resume_2024.pdf</option>
+        </select>
 
         <textarea
           type="text"

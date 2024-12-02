@@ -11,20 +11,45 @@ import { StringOutputParser } from "@langchain/core/output_parsers";
 import { Document } from "@langchain/core/documents";
 import { NextRequest, NextResponse } from 'next/server';
 import { list } from '@vercel/blob';
+import { z } from "zod";
+import { StructuredOutputParser } from "langchain/output_parsers";
+
+const resumeFormat = z.object({
+    experience: z.string().describe("User's experiences with bullets of what was done at each role"),
+    education: z.string().describe("User's education, certifications, and degrees"),
+    skills: z.string().describe("User's skills, strengths, and knowledge"),
+    projects: z.string().describe("Any relevant projects or side activities the user may have made"),
+    publications: z.string().describe("Any articles, papers, or publications the user may have authored"),
+});
+
+const parser = StructuredOutputParser.fromZodSchema(resumeFormat);
 
 export async function POST(req, res) {
     const body = await req.json();
-    const {firstMsg, jobDesc} = body;
+    const {firstMsg, jobDesc, userID} = body;
 
     // Check environment variables
     if (!process.env.PINECONE_ENVIRONMENT || !process.env.PINECONE_API_KEY) {
         throw new Error("Pinecone environment or api key vars missing");
     }
 
+    console.log(userID);
+
     /** STEP ONE: LOAD DOCUMENT */
     const resumes = await list();
 
-    let blob = await fetch(resumes.blobs[0].url).then(r => r.blob());
+    console.log(resumes.blobs[0]["pathname"])
+
+    let fetchUrl = "";
+    for(const blob of resumes.blobs) {
+        if(blob["pathname"] === userID) {
+            fetchUrl = blob["url"];
+        } else {
+            console.log(" URL not found!!! ")
+        }
+    }
+
+    let blob = await fetch(fetchUrl).then(r => r.blob());
 
     const loader = new WebPDFLoader(blob);
 
@@ -54,7 +79,7 @@ export async function POST(req, res) {
     await PineconeStore.fromDocuments(
         splitDocs, 
         new OpenAIEmbeddings(), 
-        { pineconeIndex,}
+        { pineconeIndex, namespace: userID.toString() }
     );
 
     console.log("Successfully uploaded to DB");
@@ -63,17 +88,19 @@ export async function POST(req, res) {
     // Alright, finally we have all the context and we can initialize the chain!
     const response = await initChain(
         jobDesc,
-        splitDocs
+        splitDocs,
+        userID
     );
 
     /** STEP FOUR: FORMAT OUTPUT INTO JSON AND THEN JSON TO PDF **/
-    
     // return res.status(200).json({ output: research });
     return NextResponse.json({ output: response }, { status: 200 })
 }
 
-const initChain = async(jobDesc, resume) => {
+const initChain = async(jobDesc, resume, userID) => {
     try {
+        console.log("From init chain: " + userID);
+
         // Load vector db
         const client = new Pinecone({
             apiKey: process.env.PINECONE_API_KEY
@@ -81,22 +108,23 @@ const initChain = async(jobDesc, resume) => {
       
         const pineconeIndex = client.Index(process.env.PINECONE_INDEX);
 
-        const vectorStore = await PineconeStore.fromExistingIndex(
-            new OpenAIEmbeddings(),
-            { pineconeIndex }
+        const vectorStore = await PineconeStore.fromExistingIndex(new OpenAIEmbeddings(),{ 
+                pineconeIndex, 
+                namespace: userID.toString() 
+            }
         );
 
         const vectorStoreRetriever = vectorStore.asRetriever();
 
         // initialize model
         const llm = new ChatOpenAI({
-            temperature: 0.1,
+            temperature: 0.2,
             modelName: "gpt-3.5-turbo",
         });
 
         // initialize chat prompt
         // Create a system & human prompt for the chat model
-        const SYSTEM_TEMPLATE = `Display the following bits of context and then answer the questions. 
+        const SYSTEM_TEMPLATE = `You are an expert human resources professional and specialize in rewriting resumes. Use the following context to answer the question.  
         Do not make anything up.
         ----------------
         {context}`;
@@ -113,12 +141,13 @@ const initChain = async(jobDesc, resume) => {
                 question: new RunnablePassthrough(),
             },
             chatPrompt,
-            llm,
-            new StringOutputParser()
-        ])
+            llm.withStructuredOutput(resumeFormat),
+        ]);
 
+        //const chain = llm.withStructuredOutput(resumeFormat);
         // return the response
-        const response = await chain.invoke("What is the name of the person in this resume and what did they do?");
+        const response = await chain.invoke("return the users resume as completely as possible");
+        console.log(response);
         return response
     } catch (error) {
         console.error(

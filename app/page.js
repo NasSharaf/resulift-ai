@@ -4,7 +4,7 @@ import Image from "next/image";
 import "./globals.css";
 import Gallery from "./components/Gallery";
 import { pressStart2P, sourceCodePro, instrumentSans } from "./styles/fonts";
-
+import Dropzone from "react-dropzone";
 import React, { useState, FormEvent, use } from "react";
 import { NextPage } from "next";
 import PageHeader from "./components/PageHeader";
@@ -17,6 +17,7 @@ import Button from "./components/Button";
 import LargeInput from "./components/LargeInput";
 import ThreeColumnLayout from "./components/ThreeColumnLayout";
 import "./globals.css";
+import Results from "./components/Results";
 
 export default function Home() {
   const [firstMsg, setFirstMsg] = useState(true);
@@ -27,7 +28,7 @@ export default function Home() {
   const [userID, setUserID] = useState(1);
   const [messages, setMessages] = useState([
     {
-      text: "Submit your resume and a job description",
+      text: "Output will be shown here",
       type: "bot",
     },
   ]);
@@ -71,7 +72,7 @@ export default function Home() {
       // Add the bot message
       setMessages((prevMessages) => [
         ...prevMessages,
-        { text: searchRes.output, type: "bot", sourceDocuments: null },
+        { text: String(searchRes.output), type: "bot", sourceDocuments: null },
       ]);
       // Clear any old error messages
       setError("");
@@ -91,6 +92,9 @@ export default function Home() {
 
       const res = await fetch(`/api/upload`, {
         method: 'POST',
+        // headers: {
+        //   "Content-Type": "multipart/form-data",
+        // },
         body: data,
       })
       .catch(error => console.error(error))
@@ -113,21 +117,23 @@ export default function Home() {
                   description="This tool uses Document Loaders, OpenAI Embeddings, Summarization Chain, Pinecone, VectorDB QA Chain, Prompt Templates, and the Vector Store Agent"
               />
 
+              
               <ButtonContainer>
+                  {/* <Dropzone onDrop={acceptedFiles => console.log(acceptedFiles)}>
+                  {({getRootProps, getInputProps}) => (
+                    <section>
+                      <div {...getRootProps()}>
+                        <input {...getInputProps()} />
+                        <p>Drag 'n' drop some files here, or click to select files</p>
+                      </div>
+                    </section>
+                  )}
+                  </Dropzone> */}
                   <form onSubmit={onSubmitResume}>
                     <input type="submit" value="Upload Resumes 📂" className={`py-2 px-6 mb-4 rounded-full border border-gray-500 shadow hover:shadow-lg ${colorClass}`} />
                     <input type="file" name="file" onChange={(e) => setFile(e.target.files?.[0])} />
                   </form>
-                  {/* <Button
-                      handleSubmit={handleSubmitUpload}
-                      endpoint=""
-                      buttonText=" Upload Resumes 📂"
-                  /> */}
               </ButtonContainer>
-              <select value={userID} onChange={handleUserIDChange}>
-                    <option value={1}>Nasir</option>
-                    <option value={2}>Maysum</option>
-              </select>
             </>
           }
           centerChildren={
@@ -142,6 +148,9 @@ export default function Home() {
                       : "Now enter a link to a job description you want to apply to here"
                   }
                   error={error}
+                  userID={userID}
+                  handleUserIDChange={handleUserIDChange}
+                  labelText={"Step 2 - Select the resume you wish to use here: "}
               />
             </>
           }
@@ -150,15 +159,12 @@ export default function Home() {
               <ResultWithSources
                 messages={messages}
                 pngFile="wizard"
-                maxMsgs={3}
+                maxMsgs={1}
               />
             </>
           }
           />
-            
-
-            
         </div>
     </>
-    );
+  );
 }

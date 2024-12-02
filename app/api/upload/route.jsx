@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { writeFile } from 'fs/promises';
 import {put} from "@vercel/blob";
-
+import { PineconeStore } from "@langchain/pinecone";
+import { Pinecone } from "@pinecone-database/pinecone";
 // export const config = {
 //     api: {
 //         bodyParser: false,
@@ -11,7 +12,7 @@ import {put} from "@vercel/blob";
 export async function POST(req, res) {
   const data = await req.formData();  
   const file = data.get('file');
-  console.log(data);
+  console.log(file);
 
   if (!data) {
     console.log("No file?")
@@ -19,9 +20,26 @@ export async function POST(req, res) {
   }
 
   if (file.name) {
+    // Upload blob to blob storage
     const blob = await put(file.name, file, {
       access: "public",
     })
+
+    // Upload resume to pinecone
+    const client = new Pinecone({
+      apiKey: process.env.PINECONE_API_KEY
+    });
+
+    const pineconeIndex = client.Index(process.env.PINECONE_INDEX);
+    console.log(pineconeIndex);
+
+    await PineconeStore.fromDocuments(
+        splitDocs, 
+        new OpenAIEmbeddings(), 
+        { pineconeIndex, namespace: file.name }
+    );
+
+    console.log("Successfully uploaded to DB");
 
     return NextResponse.json(blob);
   }

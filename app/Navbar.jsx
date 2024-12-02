@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import MainHeader from "./components/MainHeader";
 
 import Link from "next/link";
 import { sourceCodePro } from "./styles/fonts";
@@ -14,10 +15,11 @@ const Navbar = () => {
 
   // const Navbar = () => {
   return (
-    <nav className="fixed z-10 top-0 bg-gray-50 text-gray-800 w-full p-4 grid grid-cols-2 items-center">
-      <a href="/" className={`text-center`}>
+    <nav className="fixed z-10 top-0 bg-gray-50 text-gray-800 w-full p-4 grid items-center">
+      <MainHeader heading={"RESUMATCH.AI"} />
+      {/* <a href="/" className={`text-center`}>
         RESUMATCH-AI
-      </a>
+      </a> */}
       {/* {isClient && <HamburgerMenu />}{" "} */}
       {/* Render HamburgerMenu component on the client side */}
       {/* <div className="hidden">
