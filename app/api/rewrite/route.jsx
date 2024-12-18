@@ -38,7 +38,7 @@ export async function POST(req, res) {
     /** STEP ONE: LOAD DOCUMENT */
     const resumes = await list();
 
-    console.log(resumes.blobs[0]["pathname"])
+    console.log(resumes.blobs["pathname"])
 
     let fetchUrl = "";
     for(const blob of resumes.blobs) {
@@ -74,7 +74,6 @@ export async function POST(req, res) {
     });
 
     const pineconeIndex = client.Index(process.env.PINECONE_INDEX);
-    console.log(pineconeIndex);
 
     await PineconeStore.fromDocuments(
         splitDocs, 

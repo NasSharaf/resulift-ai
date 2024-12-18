@@ -13,13 +13,15 @@ const LargeInput = ({
   disableButton,
   labelText,
   userID,
-  handleUserIDChange
+  handleUserIDChange,
+  options
 }) => {
   const handleKeyDown = (e) => {
     if (e.key === "Enter") {
       handleSubmit();
     }
   };
+  
   return (
     <>
       <div className="bg-white p-10 rounded-3xl shadow-lg mb-8 overflow-y-auto h-[750px] max-h-[750px] flex flex-col space-y-4 justify-end">
@@ -34,15 +36,17 @@ const LargeInput = ({
         </p> */}
 
         <select 
-        value={userID} 
-        onChange={handleUserIDChange}
-        className={`py-6 px-6 bg-white shadow text-gray-900 font-semibold rounded-full hover:shadow-xl transition-colors duration-200 uppercase ${sourceCodePro.className}`}
+          value={userID} 
+          onChange={handleUserIDChange}
+          className={`py-6 px-6 bg-white shadow text-gray-900 font-semibold rounded-full hover:shadow-xl transition-colors duration-200 uppercase ${sourceCodePro.className}`}
         >
+          {options && options.map((option, index) => (
+            <option value={option} key={index}>{option}</option>
+          ))}
           <option value={"( Default )"}>""</option>
           <option value={'Nasir Sharaf Resume.pdf'}>Nasir Sharaf Resume.pdf</option>
           <option value={'Maysum_Chaudhri_Resume_2024.pdf'}>Maysum_Chaudhri_Resume_2024.pdf</option>
         </select>
-
         <textarea
           type="text"
           value={prompt}

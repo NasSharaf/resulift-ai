@@ -18,22 +18,32 @@ import LargeInput from "./components/LargeInput";
 import ThreeColumnLayout from "./components/ThreeColumnLayout";
 import "./globals.css";
 import Results from "./components/Results";
+import { list } from '@vercel/blob';
 
-export default function Home() {
+export default async function Home() {
   const [firstMsg, setFirstMsg] = useState(true);
   const [uploading, setUploading] = useState(""); 
   const [file, setFile] = useState();
   const [prompt, setPrompt] = useState("Copy and paste your job description here");
   const [error, setError] = useState(null);
-  const [userID, setUserID] = useState(1);
+  const [userID, setUserID] = useState("");
   const [messages, setMessages] = useState([
     {
       text: "Output will be shown here",
       type: "bot",
     },
   ]);
-  // For tailwind CSS
-  const colorClass = "bg-white hover:bg-white";
+  const colorClass = "bg-white hover:bg-white";   // For tailwind CSS
+  const options = [];
+
+  const getOptions = async () => {
+    const resumes = await list();
+    const resume = [];
+    for(let i = 0; i < resumes.blobs.length; i++) {
+      resume.push(resumes.blobs[i]["pathname"]);
+    };
+    const options = [...new Set(resume)];
+  }
 
   const handlePromptChange = (e) => {
     setPrompt(e.target.value);
@@ -92,9 +102,6 @@ export default function Home() {
 
       const res = await fetch(`/api/upload`, {
         method: 'POST',
-        // headers: {
-        //   "Content-Type": "multipart/form-data",
-        // },
         body: data,
       })
       .catch(error => console.error(error))
@@ -151,6 +158,7 @@ export default function Home() {
                   userID={userID}
                   handleUserIDChange={handleUserIDChange}
                   labelText={"Step 2 - Select the resume you wish to use here: "}
+                  options={options}
               />
             </>
           }

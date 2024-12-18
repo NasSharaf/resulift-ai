@@ -27,31 +27,6 @@ const MessageItem = ({ message, pngFile, isLast }) => {
           {message.text}
         </p>
       </div>
-
-      {message.sourceDocuments && (
-        <div className="mb-6">
-          <button
-            className="text-gray-600 text-sm font-bold"
-            onClick={() => setShowSources(!showSources)}
-          >
-            Source Documents {showSources ? "(Hide)" : "(Show)"}
-          </button>
-          {showSources &&
-            message.sourceDocuments.map((document, docIndex) => (
-              <div key={docIndex}>
-                <h3 className="text-gray-600 text-sm font-bold">
-                  Source {docIndex + 1}:
-                </h3>
-                <p className="text-gray-800 text-sm mt-2">
-                  {document.pageContent}
-                </p>
-                <pre className="text-xs text-gray-500 mt-2">
-                  {JSON.stringify(document.metadata, null, 2)}
-                </pre>
-              </div>
-            ))}
-        </div>
-      )}
     </div>
   );
 };
@@ -67,7 +42,7 @@ const ResultWithSources = ({ messages, pngFile, maxMsgs }) => {
   }, [messages]);
 
   // E.g. Before we reach the max messages, we should add the justify-end property, which pushes messages to the bottom
-  const maxMsgToScroll = maxMsgs || 1;
+  const maxMsgToScroll = maxMsgs || 5;
 
   return (
     <div
