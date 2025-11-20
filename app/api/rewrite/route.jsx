@@ -1,157 +1,81 @@
-// import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
+// app/api/rewrite/route.jsx
+import { NextResponse } from "next/server";
 import { WebPDFLoader } from "@langchain/community/document_loaders/web/pdf";
-import { ChatOpenAI, OpenAIEmbeddings } from "@langchain/openai";
-import { PineconeStore } from "@langchain/pinecone";
-import { Pinecone } from "@pinecone-database/pinecone";
-import { CharacterTextSplitter } from "@langchain/textsplitters";
+import { ChatOpenAI } from "@langchain/openai";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
-import { RunnablePassthrough, RunnableSequence } from "@langchain/core/runnables";
-import { formatDocumentsAsString } from "langchain/util/document";
-import { StringOutputParser } from "@langchain/core/output_parsers";
-import { Document } from "@langchain/core/documents";
-import { NextRequest, NextResponse } from 'next/server';
-import { list } from '@vercel/blob';
-import { z } from "zod";
-import { StructuredOutputParser } from "langchain/output_parsers";
 
-const resumeFormat = z.object({
-    experience: z.string().describe("User's experiences with bullets of what was done at each role"),
-    education: z.string().describe("User's education, certifications, and degrees"),
-    skills: z.string().describe("User's skills, strengths, and knowledge"),
-    projects: z.string().describe("Any relevant projects or side activities the user may have made"),
-    publications: z.string().describe("Any articles, papers, or publications the user may have authored"),
-});
-
-const parser = StructuredOutputParser.fromZodSchema(resumeFormat);
-
-export async function POST(req, res) {
+export async function POST(req) {
+  try {
     const body = await req.json();
-    const {firstMsg, jobDesc, userID} = body;
+    const { resumeURL, jobDesc } = body;
 
-    // Check environment variables
-    if (!process.env.PINECONE_ENVIRONMENT || !process.env.PINECONE_API_KEY) {
-        throw new Error("Pinecone environment or api key vars missing");
+    if (!resumeURL || !jobDesc) {
+      return NextResponse.json(
+        { error: "Missing resumeURL or jobDesc" },
+        { status: 400 }
+      );
     }
 
-    console.log(userID);
-
-    /** STEP ONE: LOAD DOCUMENT */
-    const resumes = await list();
-
-    console.log(resumes.blobs["pathname"])
-
-    let fetchUrl = "";
-    for(const blob of resumes.blobs) {
-        if(blob["pathname"] === userID) {
-            fetchUrl = blob["url"];
-        } else {
-            console.log(" URL not found!!! ")
-        }
-    }
-
-    let blob = await fetch(fetchUrl).then(r => r.blob());
-
-    const loader = new WebPDFLoader(blob);
-
+    // 1) Load resume PDF → plain text
+    const pdfBlob = await fetch(resumeURL).then((r) => r.blob());
+    const loader = new WebPDFLoader(pdfBlob);
     const docs = await loader.load();
+    const resumeText = docs.map((d) => d.pageContent).join("\n\n");
 
-    if (docs.length === 0) {
-        console.log("No documents found.");
-        throw new Error("No documents created from the resource.");
-    }
-
-    const splitter = new CharacterTextSplitter({
-        separator: " ",
-        chunkSize: 250,
-        chunkOverlap: 10,
+    // 2) GPT-5-mini model
+    const llm = new ChatOpenAI({
+      model: "gpt-5-mini"
     });
 
-    const splitDocs = await splitter.splitDocuments(docs);
+    const SYSTEM_PROMPT = `
+You are an expert resume writer.
 
-    /** STEP TWO: UPLOAD TO PINECONE AND QUERY **/
-    const client = new Pinecone({
-      apiKey: process.env.PINECONE_API_KEY
+Rewrite the user's resume to best match the job description using the JSON Resume schema.
+
+Rules:
+- Return a single valid JSON object only.
+- Do not add markdown, comments, or code fences.
+- Do not invent jobs, companies, or degrees.
+- You may reorganize, rewrite, and infer structure from the resume.
+- Extract skills, tools, certifications, and projects from the resume when present.
+- Omit fields only when truly absent in the original resume.
+    `;
+
+    const prompt = ChatPromptTemplate.fromMessages([
+      ["system", SYSTEM_PROMPT],
+      ["user", "RESUME:\n{resume}\n\nJOB DESCRIPTION:\n{job}"],
+    ]);
+
+    const chain = prompt.pipe(llm);
+
+    const result = await chain.invoke({
+      resume: resumeText,
+      job: jobDesc,
     });
 
-    const pineconeIndex = client.Index(process.env.PINECONE_INDEX);
+    console.log("GPT-5 raw message:", result);
 
-    await PineconeStore.fromDocuments(
-        splitDocs, 
-        new OpenAIEmbeddings(), 
-        { pineconeIndex, namespace: userID.toString() }
-    );
+    const raw = Array.isArray(result.content)
+      ? result.content.map((c) => c.text ?? c).join("")
+      : result.content;
 
-    console.log("Successfully uploaded to DB");
-
-    /** STEP THREE: CREATE CHAIN TO GENERATE RESUMES **/
-    // Alright, finally we have all the context and we can initialize the chain!
-    const response = await initChain(
-        jobDesc,
-        splitDocs,
-        userID
-    );
-
-    /** STEP FOUR: FORMAT OUTPUT INTO JSON AND THEN JSON TO PDF **/
-    // return res.status(200).json({ output: research });
-    return NextResponse.json({ output: response }, { status: 200 })
-}
-
-const initChain = async(jobDesc, resume, userID) => {
+    let jsonResume;
     try {
-        console.log("From init chain: " + userID);
-
-        // Load vector db
-        const client = new Pinecone({
-            apiKey: process.env.PINECONE_API_KEY
-          });
-      
-        const pineconeIndex = client.Index(process.env.PINECONE_INDEX);
-
-        const vectorStore = await PineconeStore.fromExistingIndex(new OpenAIEmbeddings(),{ 
-                pineconeIndex, 
-                namespace: userID.toString() 
-            }
-        );
-
-        const vectorStoreRetriever = vectorStore.asRetriever();
-
-        // initialize model
-        const llm = new ChatOpenAI({
-            temperature: 0.2,
-            modelName: "gpt-3.5-turbo",
-        });
-
-        // initialize chat prompt
-        // Create a system & human prompt for the chat model
-        const SYSTEM_TEMPLATE = `You are an expert human resources professional and specialize in rewriting resumes. Use the following context to answer the question.  
-        Do not make anything up.
-        ----------------
-        {context}`;
-
-        const chatPrompt = ChatPromptTemplate.fromMessages([
-            ["system", SYSTEM_TEMPLATE],
-            ["human", "{question}"],
-        ]);
-
-        // initialize chain
-        const chain = RunnableSequence.from([
-            {
-                context: vectorStoreRetriever.pipe(formatDocumentsAsString),
-                question: new RunnablePassthrough(),
-            },
-            chatPrompt,
-            llm.withStructuredOutput(resumeFormat),
-        ]);
-
-        //const chain = llm.withStructuredOutput(resumeFormat);
-        // return the response
-        const response = await chain.invoke("return the users resume as completely as possible");
-        console.log(response);
-        return response
-    } catch (error) {
-        console.error(
-          `An error occurred during the initialization of the Chat Prompt: ${error.message}`
-        );
-        throw error; // rethrow the error to let the calling function know that an error occurred
+      jsonResume = typeof raw === "string" ? JSON.parse(raw) : raw;
+    } catch (e) {
+      console.error("Failed to parse JSON from GPT-5 content:", raw);
+      return NextResponse.json(
+        { error: "LLM did not return valid JSON", raw },
+        { status: 500 }
+      );
     }
-};
+
+    return NextResponse.json({ jsonResume }, { status: 200 });
+  } catch (err) {
+    console.error("rewrite error:", err);
+    return NextResponse.json(
+      { error: err.message || "Internal error" },
+      { status: 500 }
+    );
+  }
+}
