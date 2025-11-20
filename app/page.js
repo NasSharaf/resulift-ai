@@ -232,7 +232,7 @@ export default function Home() {
       const uploadData = await uploadRes.json();
       const resumeURL = uploadData.resumeURL;
 
-      // ---- REWRITE RESUME ----
+      // ---- REWRITE RESUME WITH STREAMING ----
       setStatus("rewriting");
 
       const rewriteRes = await fetch("/api/rewrite", {
@@ -245,15 +245,47 @@ export default function Home() {
         throw new Error("Failed to rewrite resume.");
       }
 
-      const rewriteData = await rewriteRes.json();
+      // Handle streaming response
+      const reader = rewriteRes.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
 
-      // Add rewritten resume to right column
-      setJsonResume(rewriteData.jsonResume);
-      
-      setMessages((prev) => [
-        ...prev,
-        { text: "Resume updated for this job.", type: "bot" },
-      ]);
+      while (true) {
+        const { done, value } = await reader.read();
+
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+
+        // Process all complete SSE messages in buffer
+        const lines = buffer.split("\n\n");
+        buffer = lines.pop() || ""; // Keep incomplete message in buffer
+
+        for (const line of lines) {
+          if (line.startsWith("data: ")) {
+            try {
+              const data = JSON.parse(line.slice(6));
+
+              if (data.error) {
+                throw new Error(data.error);
+              }
+
+              if (data.done && data.jsonResume) {
+                // Final complete JSON received
+                setJsonResume(data.jsonResume);
+                setMessages((prev) => [
+                  ...prev,
+                  { text: "Resume updated for this job.", type: "bot" },
+                ]);
+              }
+              // You can optionally show chunks as they arrive for progress indication
+              // if (data.chunk) { ... }
+            } catch (e) {
+              console.error("Failed to parse SSE message:", e);
+            }
+          }
+        }
+      }
 
       setStatus("idle");
     } catch (e) {

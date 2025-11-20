@@ -1,6 +1,9 @@
 // app/api/render-theme/route.js
 import { NextResponse } from "next/server";
 
+// Set max duration for theme rendering
+export const maxDuration = 20;
+
 export async function POST(req) {
   try {
     const body = await req.json();

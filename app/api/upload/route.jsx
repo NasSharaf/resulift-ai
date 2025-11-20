@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { put } from "@vercel/blob";
 
+// Set max duration for file upload (60s for Pro, 10s for Hobby)
+export const maxDuration = 30;
+
 export async function POST(req) {
   const form = await req.formData();
   const file = form.get("file");
