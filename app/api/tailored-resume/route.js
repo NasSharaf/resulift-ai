@@ -1,20 +1,19 @@
 // app/api/tailored-resumes/route.ts
 import { NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { getAuth } from "@clerk/nextjs/server";
 import { db } from "@/db";
 import { tailoredResumes } from "@/db/schema";
 
 export async function POST(req) {
   // Temporarily hardcode user ID
   // Get the authenticated user
-  const { userId } = auth();
-
-  // If no user is authenticated, return unauthorized
-  if (!userId) {
-    return NextResponse.json({
-      error: "Unauthorized",
-    }, { status: 401 });
-  }
+    const { userId } = getAuth(req);
+    // If no user is authenticated, return unauthorized
+    if (!userId) {
+      return NextResponse.json({
+        error: "Unauthorized",
+      }, { status: 401 });
+    }
 
   try {
     const body = await req.json();

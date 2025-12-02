@@ -37,7 +37,7 @@
     "**/*.mts",
     "**/*.ts",
     "**/*.tsx"
-  ],
+, "app/api/fetch-resume/route.jsx"  ],
   "exclude": [
     "node_modules"
   ]
