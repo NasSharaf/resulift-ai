@@ -1,33 +1,42 @@
-// app/api/render-theme/route.js
 import { NextResponse } from "next/server";
 
-// Set max duration for theme rendering
+// Theme registry
+// Dynamic imports for themes
+const THEMES = {
+  even: () => import("jsonresume-theme-even"),
+  paper: () => import("jsonresume-theme-paper"),
+  onepage: () => import("jsonresume-theme-onepage"),
+  elegant: () => import("jsonresume-theme-elegant"),
+  flat: () => import("jsonresume-theme-flat")
+};
+
 export const maxDuration = 20;
 
 export async function POST(req) {
   try {
-    const body = await req.json();
-    const { jsonResume } = body;
+    const { jsonResume, theme = "even" } = await req.json();
 
     if (!jsonResume) {
-      return NextResponse.json(
-        { error: "Missing jsonResume" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Missing jsonResume" }, { status: 400 });
     }
 
-    // IMPORTANT: dynamic import so Next.js doesn't try to bundle fs
-    const theme = await import("jsonresume-theme-onepage-plus");
-    const renderTheme = theme.render;
+    if (!THEMES[theme]) {
+      return NextResponse.json({ error: "Invalid theme" }, { status: 400 });
+    }
 
-    const html = renderTheme(jsonResume);
+    // Dynamically import the theme
+    const themeModule = await THEMES[theme]();
+    const renderer = themeModule.render;
 
-    return NextResponse.json({ html }, { status: 200 });
+    if (typeof renderer !== 'function') {
+      return NextResponse.json({ error: "Theme rendering failed" }, { status: 500 });
+    }
+
+    const html = renderer(jsonResume);
+
+    return NextResponse.json({ html });
   } catch (err) {
     console.error("render-theme error:", err);
-    return NextResponse.json(
-      { error: err.message },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }

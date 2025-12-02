@@ -24,29 +24,33 @@ const LargeInput = ({
 
   return (
     <>
-      <div className="bg-white p-10 rounded-3xl shadow-lg mb-8 overflow-y-auto h-[750px] max-h-[750px] flex flex-col space-y-4 justify-start">
+      <div className="flex flex-col space-y-4 h-full">
         {labelText && (
           <label className="mr-4">
             <strong>{labelText}</strong>
           </label>
         )}
 
-        <textarea
-          value={prompt}
-          onChange={handlePromptChange}
-          onKeyDown={handleKeyDown}
-          placeholder={placeHolderText || "Paste the job description here…"}
-          className="bg-white p-6 rounded-3xl shadow-inner mb-4 overflow-y-auto h-[500px] max-h-[500px] text-sm text-gray-900 resize-none"
-        />
+        <div className="flex flex-col h-full">
+          <div className="flex-1 overflow-y-auto">
+            <textarea
+              value={prompt}
+              onChange={handlePromptChange}
+              onKeyDown={handleKeyDown}
+              placeholder={placeHolderText || "Paste the job description here…"}
+              className="w-full h-full p-4 text-sm text-gray-900 resize-none outline-none border border-gray-200 rounded-lg"
+            />
+          </div>
 
-        <div className="flex flex-row">
-          <button
-            onClick={handleSubmit}
-            disabled={disableButton}
-            className={`py-4 px-6 bg-black text-white shadow font-semibold rounded-full hover:shadow-xl transition-colors duration-200 uppercase text-xs disabled:opacity-50 disabled:cursor-not-allowed ${sourceCodePro.className}`}
-          >
-            {buttonText || "Tailor My Resume"}
-          </button>
+          <div className="pt-4">
+            <button
+              onClick={handleSubmit}
+              disabled={disableButton}
+              className="px-4 py-2 rounded-full bg-black text-white text-xs font-semibold hover:bg-gray-800 disabled:opacity-50"
+            >
+              {buttonText || "Tailor My Resume"}
+            </button>
+          </div>
         </div>
       </div>
 

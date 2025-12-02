@@ -1,22 +1,49 @@
+import path from 'path';
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-    webpack(config) {
-        config.experiments = {
-        asyncWebAssembly: true,
-        layers: true,
-        topLevelAwait: true,
-        };
-    
+    // Turbopack configuration
+    turbopack: {
+        // Optional: Add specific Turbopack experiments if needed
+        experiments: {
+            // Add any specific Turbopack configurations here
+        }
+    },
+
+    // Optional webpack configuration (conditionally applied)
+    webpack: (config, { isServer, webpack }) => {
+        // Only apply custom webpack config if not using Turbopack
+        if (!webpack.isWebpackCompiler()) {
+            // Resolve aliases
+            config.resolve.alias = {
+                ...config.resolve.alias,
+                'canvas': false,
+            };
+
+            // Fallback for node APIs
+            if (!isServer) {
+                config.resolve.fallback = {
+                    ...config.resolve.fallback,
+                    fs: false,
+                    path: false,
+                    crypto: false,
+                };
+            }
+        }
+
         return config;
     },
-    // Add env { API_KEY: process.env.API_KEY}
-    env:{
-        OPENAI_API_KEY: process.env.OPENAI_API_KEY,
-        SERPAPI_API_KEY: process.env.SERPAPI_API_KEY,
-        PINECONE_API_KEY: process.env.PINECONE_API_KEY,
-        PINECONE_ENVIRONMENT: process.env.PINECONE_ENVIRONMENT,
-        PINECONE_INDEX: process.env.PINECONE_INDEX,
-        BLOB_READ_WRITE: process.env.BLOB_READ_WRITE,
+    
+    // Transpile specific packages
+    transpilePackages: [
+        '@langchain/community',
+        '@langchain/openai',
+        'pdfjs-dist'
+    ],
+
+    // Environment variables (if needed)
+    env: {
+        // Add any environment-specific configurations
     }
 };
 

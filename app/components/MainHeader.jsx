@@ -1,13 +1,13 @@
 import React from "react";
-import { pressStart2P, instrumentSans } from "../styles/fonts";
+import { pressStart2P } from "../styles/fonts";
 
-const MainHeader = ({ heading }) => {
+const MainHeader = ({ heading, className = "" }) => {
   return (
-    <>
-      <h1 className={`${pressStart2P.className} text-center text-4xl uppercase`}>
-        {heading}
-      </h1>
-    </>
+    <h1
+      className={`${pressStart2P.className} uppercase ${className}`}
+    >
+      {heading}
+    </h1>
   );
 };
 

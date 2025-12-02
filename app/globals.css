@@ -81,3 +81,20 @@ h3 {
   order: 0;
   flex-grow: 0;
 }
+
+/* BLOCK ALL TAILWIND FROM BLEEDING INTO THEME HTML */
+.theme-preview-container * {
+  all: revert !important;
+}
+
+.theme-preview-container {
+  all: revert !important;
+  display: block;
+  width: 750px; /* fixed page width like PDF */
+  margin: 0 auto;
+  padding: 40px;
+  background: white;
+  overflow-y: auto;
+  border-radius: 8px;
+  box-shadow: 0 0 6px rgba(0,0,0,0.1);
+}
