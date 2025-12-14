@@ -37,7 +37,7 @@
     "jsonresume-theme-onepage-plus": "^1.0.1",
     "jsonresume-theme-paper": "^0.5.0",
     "langchain": "^0.2.5",
-    "next": "^16.0.3",
+    "next": "16.0.10",
     "openai": "^3.2.1",
     "pdf-extraction": "^1.0.2",
     "pdf-parse": "^1.1.1",
