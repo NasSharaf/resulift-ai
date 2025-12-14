@@ -2,13 +2,14 @@ import React from "react";
 
 const ColumnCard = ({ children }) => (
   <div className="
-    bg-white 
-    rounded-2xl 
-    shadow 
-    p-6 
+    bg-white
+    rounded-2xl
+    shadow
+    p-6
     w-full
-    h-[calc(100vh-180px)]    /* consistent height for all three */
-    overflow-y-auto
+    h-full
+    flex flex-col
+    overflow-hidden
   ">
     {children}
   </div>

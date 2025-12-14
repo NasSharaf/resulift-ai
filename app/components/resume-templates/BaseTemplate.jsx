@@ -1,56 +1,98 @@
-import React from 'react';
+import React from "react";
 import { formatLocation } from "./utils/formatLocation";
 import { groupSkills } from "./utils/groupSkills";
 
 export function BaseTemplate({
   jsonResume,
-  templateClasses = '',
-  containerClasses = 'p-8 max-w-4xl mx-auto',
-  headerClasses = 'text-center mb-6',
-  sectionHeaderClasses = 'text-2xl font-semibold border-b-2 border-gray-300 pb-2 mb-4'
+
+  /* CONTAINER + GLOBAL CLASSES */
+  containerClass = "bg-white text-gray-900 p-8",
+
+  /* HEADER CLASSES */
+  headerContainerClass = "text-center mb-6 border-b border-gray-300 pb-4",
+  nameClass = "text-3xl font-bold",
+  labelClass = "text-lg text-gray-600 mt-1",
+  contactClass = "mt-2 text-sm text-gray-700 flex justify-center flex-wrap gap-3",
+  summaryClass = "mt-3 text-gray-700",
+
+  /* SECTION CLASSES */
+  sectionContainerClass = "mb-6",
+  sectionTitleClass = "text-xl font-semibold uppercase tracking-wide border-b border-gray-300 pb-1 mb-3",
+
+  /* ITEM CLASSES (experience, education, projects) */
+  itemContainerClass = "mb-4",
+  itemTitleClass = "font-semibold text-gray-900",
+  itemSubtitleClass = "text-gray-700",
+  itemDateClass = "text-sm text-gray-600",
+  itemSummaryClass = "italic text-gray-700 mt-2",
+  highlightsListClass = "list-disc list-inside mt-2 text-gray-700",
+
+  /* SKILLS */
+  skillsTextClass = "text-sm text-gray-700"
 }) {
   if (!jsonResume) return null;
 
-  const { basics = {}, work = [], education = [], skills = {}, projects = [], publications = [] } = jsonResume;
+  const {
+    basics = {},
+    work = [],
+    education = [],
+    skills = {},
+    projects = [],
+    publications = [],
+  } = jsonResume;
+
   const grouped = groupSkills(skills);
 
   return (
-    <div className={`resume-container ${containerClasses} ${templateClasses}`}>
+    <div className={containerClass}>
 
-      {/* BASICS */}
-      <header className={headerClasses}>
-        <h1 className="text-3xl font-bold">{basics.name}</h1>
-        {basics.label && <p className="text-xl text-gray-600">{basics.label}</p>}
+      {/* HEADER */}
+      <header className={headerContainerClass}>
+        <h1 className={nameClass}>{basics.name}</h1>
+        {basics.label && <p className={labelClass}>{basics.label}</p>}
 
-        <div className="contact-info mt-2 text-sm space-y-1">
-          {basics.email && <p>{basics.email}</p>}
-          {basics.phone && <p>{basics.phone}</p>}
-          {formatLocation(basics.location) && <p>{formatLocation(basics.location)}</p>}
+        <div className={contactClass}>
+          {basics.email && <span>{basics.email}</span>}
+          {basics.phone && <span>{basics.phone}</span>}
+          {formatLocation(basics.location) && (
+            <span>{formatLocation(basics.location)}</span>
+          )}
           {basics.website && (
-            <p><a className="text-blue-600 underline" href={basics.website}>{basics.website}</a></p>
+            <a href={basics.website} className="underline">
+              {basics.website}
+            </a>
           )}
         </div>
 
-        {basics.summary && <p className="mt-4 text-gray-700">{basics.summary}</p>}
+        {basics.summary && <p className={summaryClass}>{basics.summary}</p>}
       </header>
 
       {/* EXPERIENCE */}
-      {work?.length > 0 && (
-        <section className="mb-6">
-          <h2 className={sectionHeaderClasses}>Professional Experience</h2>
+      {work.length > 0 && (
+        <section className={sectionContainerClass}>
+          <h2 className={sectionTitleClass}>Professional Experience</h2>
 
           {work.map((job, i) => (
-            <div key={i} className="mb-4">
-              <div className="flex justify-between">
-                <h3 className="text-xl font-bold">{job.position} — {job.company}</h3>
-                <p className="text-gray-600">{job.startDate} – {job.endDate || 'Present'}</p>
+            <div key={i} className={itemContainerClass}>
+              <div className="flex justify-between items-start">
+                <div>
+                  <h3 className={itemTitleClass}>{job.position}</h3>
+                  <p className={itemSubtitleClass}>{job.company}</p>
+                </div>
+                <p className={itemDateClass}>
+                  {job.startDate} – {job.endDate || "Present"}
+                </p>
               </div>
 
-              {job.summary && <p className="italic text-gray-700 mt-2">{job.summary}</p>}
+              {job.summary && (
+                <p className={itemSummaryClass}>{job.summary}</p>
+              )}
 
               {job.highlights?.length > 0 && (
-                <ul className="list-disc list-inside mt-2 text-gray-700">
-                  {job.highlights.map((h, j) => <li key={j}>{h}</li>)}
+                <ul className={highlightsListClass}>
+                  {job.highlights.map((h, j) => (
+                    <li key={j}>{h}</li>
+                  ))}
                 </ul>
               )}
             </div>
@@ -59,50 +101,54 @@ export function BaseTemplate({
       )}
 
       {/* EDUCATION */}
-      {education?.length > 0 && (
-        <section className="mb-6">
-          <h2 className={sectionHeaderClasses}>Education</h2>
+      {education.length > 0 && (
+        <section className={sectionContainerClass}>
+          <h2 className={sectionTitleClass}>Education</h2>
 
           {education.map((edu, i) => (
-            <div key={i} className="mb-4">
-              <div className="flex justify-between">
-                <h3 className="text-xl font-bold">{edu.institution}</h3>
-                <p className="text-gray-600">{edu.startDate} – {edu.endDate || "Present"}</p>
-              </div>
-              <p className="text-gray-700">{edu.studyType} in {edu.area}</p>
+            <div key={i} className={itemContainerClass}>
+              <h3 className={itemTitleClass}>{edu.institution}</h3>
+              <p className={itemSubtitleClass}>
+                {edu.studyType} in {edu.area}
+              </p>
+              <p className={itemDateClass}>
+                {edu.startDate} – {edu.endDate || "Present"}
+              </p>
             </div>
           ))}
         </section>
       )}
 
       {/* SKILLS */}
-      {Object.keys(grouped)?.length > 0 && (
-        <section className="mb-6">
-          <h2 className={sectionHeaderClasses}>Skills</h2>
-
-          <div className="space-y-4">
+      {Object.keys(grouped).length > 0 && (
+        <section className={sectionContainerClass}>
+          <h2 className={sectionTitleClass}>Skills</h2>
+          <div className="space-y-1">
             {Object.entries(grouped).map(([group, list]) => (
-                <p key={group} className="text-gray-700 text-sm">
-                    <span className="font-semibold capitalize">
-                    {group.replace(/_/g, " ")}:
-                    </span>{" "}
-                    {list.join(", ")}
-                </p>
-                ))}
+              <p key={group} className={skillsTextClass}>
+                <strong className="capitalize">{group.replace(/_/g, " ")}:</strong>{" "}
+                {list.join(", ")}
+              </p>
+            ))}
           </div>
         </section>
       )}
 
       {/* PROJECTS */}
-      {projects?.length > 0 && (
-        <section className="mb-6">
-          <h2 className={sectionHeaderClasses}>Projects</h2>
+      {projects.length > 0 && (
+        <section className={sectionContainerClass}>
+          <h2 className={sectionTitleClass}>Projects</h2>
+
           {projects.map((proj, i) => (
-            <div key={i} className="mb-4">
-              <h3 className="text-xl font-semibold">{proj.name}</h3>
-              {proj.description && <p className="text-gray-700">{proj.description}</p>}
+            <div key={i} className={itemContainerClass}>
+              <h3 className={itemTitleClass}>{proj.name}</h3>
+              {proj.description && (
+                <p className={itemSubtitleClass}>{proj.description}</p>
+              )}
               {proj.technologies && (
-                <p className="text-sm text-gray-600 mt-1"><strong>Tech:</strong> {proj.technologies}</p>
+                <p className="text-sm text-gray-600 mt-1">
+                  <strong>Tech:</strong> {proj.technologies}
+                </p>
               )}
             </div>
           ))}
@@ -110,11 +156,13 @@ export function BaseTemplate({
       )}
 
       {/* PUBLICATIONS */}
-      {publications?.length > 0 && (
-        <section>
-          <h2 className={sectionHeaderClasses}>Publications</h2>
+      {publications.length > 0 && (
+        <section className={sectionContainerClass}>
+          <h2 className={sectionTitleClass}>Publications</h2>
           <ul className="list-disc list-inside text-gray-700">
-            {publications.map((pub, i) => <li key={i}>{pub.citation}</li>)}
+            {publications.map((pub, i) => (
+              <li key={i}>{pub.citation}</li>
+            ))}
           </ul>
         </section>
       )}

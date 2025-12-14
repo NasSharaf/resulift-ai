@@ -23,24 +23,31 @@ export async function generateThemedHTML(jsonResume, theme = 'even') {
   `;
 }
 
-export async function downloadPDF(html) {
-  const response = await fetch('/api/download-pdf', {
-    method: 'POST',
+export async function downloadPDF(jsonResume, theme = "even") {
+  const res = await fetch("/api/download-pdf", {
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     },
-    body: JSON.stringify({ html })
+    body: JSON.stringify({ jsonResume, theme }),
   });
 
-  const blob = await response.blob();
-  const url = window.URL.createObjectURL(blob);
-  
-  const a = document.createElement('a');
+  if (!res.ok) {
+    const text = await res.text();
+    console.error("PDF download error:", res.status, text);
+    throw new Error("Failed to generate PDF");
+  }
+
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
   a.href = url;
-  a.download = 'resume.pdf';
+  a.download = "resume.pdf";
   document.body.appendChild(a);
   a.click();
   a.remove();
+  URL.revokeObjectURL(url);
 }
 
 export async function downloadWord(jsonResume) {

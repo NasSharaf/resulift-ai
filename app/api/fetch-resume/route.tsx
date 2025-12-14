@@ -3,43 +3,50 @@ import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { getAuth } from "@clerk/nextjs/server";
 import { db } from "@/db";
+import { cookies } from "next/headers";
 import { resumes } from "@/db/schema";
 
-export async function GET(req) {
-  // Temporarily hardcode user ID
-  // Get the authenticated user
+export async function GET(req: Request) {
   const { userId } = getAuth(req);
-  console.log(userId);
-  // If no user is authenticated, return unauthorized
-  if (!userId) {
-    return NextResponse.json({
-      error: "Unauthorized",
-    }, { status: 401 });
+  const cookieStore = await cookies();
+  let visitorId = cookieStore.get("resumatch_vid")?.value;
+
+  if (!userId && !visitorId) {
+    visitorId = crypto.randomUUID();
+    const tempRes = NextResponse.next();
+    tempRes.cookies.set("resumatch_vid", visitorId, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 365,
+    });
   }
 
   try {
-    // Fetch all resumes for the user
-    const userResumes = await db.select({
-      id: resumes.id,
-      title: resumes.title,
-      blobUrl: resumes.blobUrl,
-      createdAt: resumes.createdAt
-    })
-    .from(resumes)
-    .where(eq(resumes.userId, userId))
-    .orderBy(resumes.createdAt); // Optional: order by creation date
+    const userResumes = await db
+      .select({
+        id: resumes.id,
+        title: resumes.title,
+        blobUrl: resumes.blobUrl,
+        createdAt: resumes.createdAt,
+      })
+      .from(resumes)
+      .where(eq(resumes.userId, userId))
+      .orderBy(resumes.createdAt);
 
     return NextResponse.json({
       success: true,
-      resumes: userResumes
+      resumes: userResumes,
     });
-
-  } catch (err) {
+  } catch (err: any) {
     console.error("RESUME RETRIEVAL ERROR:", err);
-    
-    return NextResponse.json({
-      error: "Server error",
-      details: err.message,
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        error: "Server error",
+        details: err.message,
+      },
+      { status: 500 }
+    );
   }
 }

@@ -1,149 +1,50 @@
-import React from 'react';
-import { formatLocation } from "./utils/formatLocation";
-import { groupSkills } from "./utils/groupSkills";
+import React from "react";
+import { BaseTemplate } from "./BaseTemplate";
 
 export function FlatTemplate({ jsonResume }) {
-  if (!jsonResume) return null;
-
-  const { basics = {}, work = [], education = [], skills = {}, projects = [], publications = [] } = jsonResume;
-  const grouped = groupSkills(skills);
-
   return (
-    <div className="resume-template flat bg-gray-100 text-gray-900 p-8">
+    <div className="grid grid-cols-[220px_1fr]">
 
-      {/* HEADER */}
-      <header className="text-center uppercase tracking-widest pb-4 border-b-4 border-black mb-8">
-        <h1 className="text-4xl font-bold text-black">{basics.name}</h1>
+      {/* Sidebar (white, print-safe) */}
+      <aside className="bg-white border-r border-gray-300 p-6">
+        <h1 className="text-3xl font-extrabold uppercase tracking-wide mb-2">
+          {jsonResume?.basics?.name}
+        </h1>
 
-        {basics.label && (
-          <p className="text-xl text-gray-700 mt-2">{basics.label}</p>
+        {jsonResume?.basics?.label && (
+          <p className="text-base font-medium text-gray-700 mb-4">
+            {jsonResume.basics.label}
+          </p>
         )}
 
-        <div className="contact-info mt-4 text-sm flex justify-center space-x-4">
-
-          {basics.email && <span>{basics.email}</span>}
-          {basics.phone && <span>| {basics.phone}</span>}
-
-          {formatLocation(basics.location) && (
-            <span>| {formatLocation(basics.location)}</span>
-          )}
-
-          {basics.website && (
-            <span>| <a href={basics.website} className="underline text-blue-700">
-              {basics.website}
-            </a></span>
-          )}
+        <div className="text-sm text-gray-700 space-y-1">
+          {jsonResume?.basics?.email && <p>{jsonResume.basics.email}</p>}
+          {jsonResume?.basics?.phone && <p>{jsonResume.basics.phone}</p>}
+          {jsonResume?.basics?.website && <p>{jsonResume.basics.website}</p>}
         </div>
+      </aside>
 
-        {basics.summary && (
-          <p className="mt-4 italic text-gray-700">{basics.summary}</p>
-        )}
-      </header>
+      {/* Main content */}
+      <BaseTemplate
+        jsonResume={jsonResume}
 
-      {/* EXPERIENCE */}
-      <section className="mb-8">
-        <h2 className="text-2xl font-bold border-b-4 border-black pb-2 mb-4">
-          Professional Experience
-        </h2>
+        containerClass="bg-white p-10 text-gray-900"
 
-        {work.map((job, idx) => (
-          <div key={idx} className="mb-6 pb-4 border-b border-gray-300 last:border-b-0">
+        headerContainerClass="hidden"
 
-            <div className="flex justify-between items-start">
-              <div>
-                <h3 className="text-xl font-bold text-black">{job.position}</h3>
-                <p className="text-gray-800">{job.company}</p>
-              </div>
+        sectionContainerClass="mb-8"
+        sectionTitleClass="text-xl font-black uppercase tracking-wide border-b-2 border-black pb-1 mb-4"
 
-              <p className="text-sm text-gray-600">
-                {job.startDate} – {job.endDate || "Present"}
-              </p>
-            </div>
+        itemContainerClass="mb-6 pb-4 border-b border-gray-200"
+        itemTitleClass="text-base font-bold"
+        itemSubtitleClass="text-sm text-gray-700"
+        itemDateClass="text-xs text-gray-500"
+        itemSummaryClass="italic text-gray-700 mt-2 text-sm"
+        highlightsListClass="list-disc pl-5 text-base text-gray-800 mt-3 space-y-1"
 
-            {job.summary && (
-              <p className="italic text-gray-700 mt-2">{job.summary}</p>
-            )}
-
-            {job.highlights?.length > 0 && (
-              <ul className="list-none pl-0 text-gray-700 mt-2">
-                {job.highlights.map((h, i) => (
-                  <li key={i} className="mb-1 before:content-['▸'] before:mr-2 before:text-black">
-                    {h}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        ))}
-      </section>
-
-      {/* TWO COLUMN GRID */}
-      <div className="grid grid-cols-2 gap-8">
-
-        {/* EDUCATION */}
-        <section>
-          <h2 className="text-2xl font-bold border-b-4 border-black pb-2 mb-4">
-            Education
-          </h2>
-
-          {education.map((edu, idx) => (
-            <div key={idx} className="mb-4">
-              <h3 className="text-xl font-bold text-black">{edu.institution}</h3>
-              <p className="text-gray-800">{edu.studyType} in {edu.area}</p>
-              <p className="text-sm text-gray-600">
-                {edu.startDate} – {edu.endDate || "Present"}
-              </p>
-            </div>
-          ))}
-        </section>
-
-        {/* SKILLS */}
-        <section>
-          <h2 className="text-2xl font-bold border-b-4 border-black pb-2 mb-4">
-            Skills
-          </h2>
-
-          <div className="space-y-4">
-            {Object.entries(grouped).map(([group, list]) => (
-                <p key={group} className="text-gray-700 text-sm">
-                    <span className="font-semibold capitalize">
-                    {group.replace(/_/g, " ")}:
-                    </span>{" "}
-                    {list.join(", ")}
-                </p>
-            ))}
-          </div>
-        </section>
-      </div>
-
-      {/* PROJECTS */}
-      <section className="mt-8">
-        <h2 className="text-2xl font-bold border-b-4 border-black pb-2 mb-4">Projects</h2>
-
-        {projects.map((proj, idx) => (
-          <div key={idx} className="mb-4">
-            <h3 className="text-xl font-bold text-black">{proj.name}</h3>
-            <p className="text-gray-800">{proj.description}</p>
-
-            {proj.technologies && (
-              <p className="text-sm text-gray-700 mt-1">
-                <strong>Tech:</strong> {proj.technologies}
-              </p>
-            )}
-          </div>
-        ))}
-      </section>
-
-      {/* PUBLICATIONS */}
-      <section className="mt-8">
-        <h2 className="text-2xl font-bold border-b-4 border-black pb-2 mb-4">
-          Publications
-        </h2>
-
-        <ul className="list-disc list-inside text-gray-800">
-          {publications.map((pub, idx) => <li key={idx}>{pub.citation}</li>)}
-        </ul>
-      </section>
+        /* SKILLS — updated (normal case, normal weight) */
+        skillsTextClass="text-base text-gray-800"
+      />
     </div>
   );
 }

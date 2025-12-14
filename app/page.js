@@ -6,12 +6,13 @@ import ResumeDropzone from "./components/ResumeDropzone";
 import ThreeColumnLayout from "./components/ThreeColumnLayout";
 import LargeInput from "./components/LargeInput";
 import ResumePreview from "./components/ResumePreview";
-import ButtonContainer from "./components/ButtonContainer";
 import ATSScoreBar from "./components/AtsScoreBar";
 import ATSModal from "./components/AtsModal";
+import SignupRequiredModal from "./components/SignupRequiredModal";
+import ReferralOrUpgradeModal from "./components/ReferralOrUpgradeModal";
 import Spinner from "./components/Spinner";
+import detectIncognito from "@/app/utils/detectIncognito";
 import { generateThemedHTML, downloadPDF, downloadWord } from "./components/downloadUtils";
-
 
 export const maxDuration = 60;
 
@@ -27,8 +28,19 @@ export default function Home() {
   const [error, setError] = useState(null);         // Error message
   const [status, setStatus] = useState("idle");     // "idle" | "uploading" | "rewriting"
   const [showModal, setShowModal] = useState(false);
+  const [showSignupModal, setShowSignupModal] = useState(false);
+  const [showReferralModal, setShowReferralModal] = useState(false);
   const [theme, setTheme] = useState("even");
   const [themedHTML, setThemedHTML] = useState(null);
+  const [isIncognito, setIsIncognito] = useState(false);
+  const [userInfo, setUserInfo] = useState(null);
+
+  // Detect if incognito
+  useEffect(() => {
+    detectIncognito().then(({ isPrivate }) => {
+      setIsIncognito(isPrivate);
+    });
+  }, []);
 
   // Preview Resume template
   useEffect(() => {
@@ -41,8 +53,29 @@ export default function Home() {
     loadTheme();
   }, [jsonResume, theme]);
 
+  // fetch user info
+  useEffect(() => {
+    async function load() {
+      const res = await fetch("/api/user-info", { credentials: "include" });
+      const data = await res.json();
+      setUserInfo(data);
+    }
+    load();
+  }, []);
+
+  // After sign-up credits will refresh
+  useEffect(() => {
+    if (userInfo?.isLoggedIn) {
+      fetch("/api/user-info", { credentials: "include" })
+        .then(r => r.json())
+        .then(setUserInfo);
+    }
+  }, [userInfo?.isLoggedIn]);
+
   // Fetch saved resumes on component mount
   useEffect(() => {
+    if (isIncognito) return;   
+
     const fetchSavedResumes = async () => {
       try {
         const response = await fetch("/api/fetch-resume", {
@@ -61,6 +94,18 @@ export default function Home() {
 
     fetchSavedResumes();
   }, []);
+
+  // 🚫 BLOCK OTHER EFFECTS WHILE DETECTING
+  if (isIncognito) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen text-center px-6">
+        <h1 className="text-2xl font-bold mb-4">🚫 Resumatch is not available in Private Browsing Mode</h1>
+        <p className="text-gray-600 text-md max-w-md">
+          Please open Resumatch in a normal browser window to use your free resume rewrites.
+        </p>
+      </div>
+    );
+  }
 
   // 1. Update job description text
   const handlePromptChange = (e) => {
@@ -122,7 +167,10 @@ export default function Home() {
       const uploadRes = await fetch("/api/upload", {
         method: "POST",
         body: uploadBody,
-        headers: uploadHeaders,
+        headers: {
+          ...uploadHeaders,
+          "x-incognito": isIncognito ? "true" : "false",
+        },
         credentials: "include",
       });
 
@@ -141,12 +189,27 @@ export default function Home() {
 
       const rewriteRes = await fetch("/api/rewrite", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "x-incognito": isIncognito ? "true" : "false",
+        },
         body: JSON.stringify({ resumeURL, jobDesc }),
       });
 
       if (!rewriteRes.ok) {
-        throw new Error("Failed to rewrite resume.");
+        const errorData = await rewriteRes.json().catch(() => ({}));
+
+        if (errorData.error === "ANON_LIMIT") {
+          setShowSignupModal(true);
+          return;
+        }
+
+        if (errorData.error === "FREE_LIMIT") {
+          setShowReferralModal(true);
+          return;
+        }
+
+        throw new Error(errorData.error || "Failed to rewrite resume.");
       }
 
       // STREAMING REWRITE HANDLER (unchanged)
@@ -224,14 +287,39 @@ export default function Home() {
   };
 
   const handleDownloadPDF = async () => {
-    const html = await generateThemedHTML(jsonResume, theme);
-    await downloadPDF(html);
+    if (!jsonResume) return;
+    await downloadPDF(jsonResume, theme);
   };
 
   const handleDownloadWord = async () => {
     const html = await generateThemedHTML(jsonResume, theme);
     await downloadWord(html);
   };
+
+  // After referral or upgrade, refresh credits
+  const reloadUserInfo = async () => {
+    const res = await fetch("/api/user-info");
+    const data = await res.json();
+    setUserInfo(data);
+  };
+
+  const handleUpgrade = async () => {
+    try {
+      const res = await fetch("/api/checkout", {
+        method: "POST",
+        credentials: "include",
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url; // to Stripe Checkout
+      } else {
+        console.error("No checkout URL returned", data);
+      }
+    } catch (err) {
+      console.error("Failed to start checkout", err);
+    }
+  };
+
 
   const originalScore = jsonResume?.atsScore?.totalScore;
   const rewrittenScore = jsonResume?.atsScore_rewrite?.totalScore;
@@ -250,8 +338,52 @@ export default function Home() {
       ? "Rewriting…"
       : "Tailor My Resume";
 
+  if (isIncognito) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen text-center px-6">
+        <h1 className="text-2xl font-bold mb-4">🚫 Resumatch is not available in Private Browsing Mode</h1>
+        <p className="text-gray-600 text-md max-w-md">
+          Please open Resumatch in a normal browser window to use your free resume rewrites.
+        </p>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex justify-center flex-col mx-auto">
+    <div className="flex justify-center flex-col h-full">
+      {userInfo && (
+        <div className="flex justify-between items-center mb-4 p-3 bg-white border rounded-xl text-sm font-medium">
+          
+          {/* LEFT: Rewrites Remaining */}
+          <div>
+            {userInfo.isSubscribed ? (
+              <span>Unlimited Rewrites</span>
+            ) : (
+              <span>{userInfo.remaining} rewrites remaining</span>
+            )}
+          </div>
+
+          {/* RIGHT: Referral Link */}
+          {userInfo.referralLink && (
+            <div className="flex items-center gap-2 text-sm">
+              <span className="font-semibold">Invite a friend for +1 rewrite:</span>
+              <input
+                className="p-1 border rounded w-48"
+                value={userInfo.referralLink}
+                readOnly
+              />
+              <button
+                className="px-3 py-1 rounded-full bg-black text-white text-sm font-semibold hover:bg-gray-800"
+                onClick={() => navigator.clipboard.writeText(userInfo.referralLink)}
+              >
+                Copy
+              </button>
+            </div>
+          )}
+
+        </div>
+      )}
+
       <ThreeColumnLayout
         leftChildren={
           <div className="flex flex-col h-full">
@@ -275,9 +407,7 @@ export default function Home() {
                   id="resume-select"
                   value={selectedResumeId || ''}
                   onChange={handleResumeSelect}
-                  className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 
-                    focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 
-                    sm:text-sm rounded-md"
+                  className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-full text-sm bg-white"
                 >
                   <option value="">Choose a resume</option>
                   {savedResumes.map((resume) => (
@@ -290,7 +420,7 @@ export default function Home() {
             )}
 
             {/* DROPZONE EXPANDS TO FILL COLUMN */}
-            <div className="flex-1">
+            <div className="flex-1 overflow-y-auto">
               <Dropzone
                 onDrop={handleDrop}
                 accept={{ "application/pdf": [] }}
@@ -301,11 +431,15 @@ export default function Home() {
                     getRootProps={getRootProps}
                     getInputProps={getInputProps}
                     file={file}
+                    isIncognito={isIncognito} 
                   />
                 )}
               </Dropzone>
             </div>
 
+            <p className="text-xs text-gray-500 mt-1">
+              Resumes are processed securely and not shared
+            </p>
           </div>
         }
         centerChildren={
@@ -319,6 +453,7 @@ export default function Home() {
               disableButton={status !== "idle"}
               error={error}
               labelText="Step 2 — Paste job description"
+              isIncognito={isIncognito}  
             />
           </>
         }
@@ -333,6 +468,7 @@ export default function Home() {
                       <ATSScoreBar
                         original={originalScore}
                         rewritten={rewrittenScore}
+                        disabled={!jsonResume}
                         onOpen={() => setShowModal(true)}
                       />
                     </div>
@@ -347,36 +483,24 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="flex overflow-y-auto">
+            <div className="flex-1 overflow-y-auto">
               {jsonResume ? (
                 <ResumePreview jsonResume={jsonResume} theme={theme} themedHTML={themedHTML} />
               ) : (
-                <p className="text-gray-500 text-sm">
-                  Your tailored resume will appear here.
-                </p>
+                <div className="w-full h-full border border-dashed rounded-lg bg-gray-50" />
               )}
             </div>
 
             {jsonResume && (
-              <div className="pt-4 flex gap-2">
-                <button
-                  onClick={handleDownloadPDF}
-                  className="px-4 py-2 rounded-full bg-black text-white text-xs font-semibold hover:bg-gray-800"
-                >
-                  Download PDF
-                </button>
-                <button
-                  onClick={handleDownloadWord}
-                  className="px-4 py-2 rounded-full bg-white border border-gray-400 text-xs font-semibold hover:bg-gray-100"
-                >
-                  Download Word
-                </button>
-                <div className="pb-3">
-                  <label className="text-xs font-semibold">Select Template:</label>
+              <div className="pt-4 flex flex-col gap-3">
+                <div>
+                  <label className="text-xs font-semibold text-gray-600">
+                    Select Template:
+                  </label>
                   <select
                     value={theme}
                     onChange={(e) => setTheme(e.target.value)}
-                    className="mt-1 block w-full border-gray-300 rounded-md text-xs"
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-full text-sm"
                   >
                     <option value="even">Even (Clean Minimal)</option>
                     <option value="paper">Paper</option>
@@ -385,6 +509,18 @@ export default function Home() {
                     <option value="flat">Flat</option>
                   </select>
                 </div>
+                <button
+                  onClick={handleDownloadPDF}
+                  className="px-4 py-2 rounded-full bg-black text-white text-sm font-semibold hover:bg-gray-800"
+                >
+                  Download PDF
+                </button>
+                <button
+                  onClick={handleDownloadWord}
+                  className="px-4 py-2 rounded-full border border-black text-black text-sm font-semibold hover:bg-gray-100"
+                >
+                  Download Word
+                </button>
               </div>
             )}
           </div>
@@ -400,6 +536,17 @@ export default function Home() {
         originalRecs={originalRecs}
         rewrittenRecs={rewrittenRecs}
         validationErrors={jsonResume?.validationErrors}
+      />
+      <SignupRequiredModal 
+        show={showSignupModal} 
+        onClose={() => setShowSignupModal(false)} 
+      />
+
+      <ReferralOrUpgradeModal
+        show={showReferralModal}
+        onClose={() => setShowReferralModal(false)}
+        referralLink={userInfo?.referralLink}
+        onUpgrade={handleUpgrade}
       />
     </div>
   );

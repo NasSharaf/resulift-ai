@@ -1,26 +1,20 @@
 // components/ResumeDropzone.jsx
 import React from "react";
 
-export default function ResumeDropzone({ getRootProps, getInputProps, file }) {
+export default function ResumeDropzone({ getRootProps, getInputProps, file, isIncognito  }) {
   return (
     <div
-      {...getRootProps()}
-      className="
+      {...(!isIncognito ? getRootProps() : {})}
+      className={`
         flex flex-col items-center justify-center
-        border-2 border-dashed border-gray-300
-        rounded-xl
-        h-full
-        min-h-[200px]
-        cursor-pointer
-        transition
-        bg-gray-50
-        hover:bg-gray-100
-        hover:border-gray-400
-        text-center
-        px-4
-      "
+        border-2 border-dashed rounded-xl h-full min-h-[200px] px-4 text-center transition
+        ${isIncognito 
+          ? "cursor-not-allowed bg-gray-100 border-gray-200 opacity-50" 
+          : "cursor-pointer bg-gray-50 hover:bg-gray-100 hover:border-gray-400 border-gray-300"
+        }
+      `}
     >
-      <input {...getInputProps()} />
+      <input {...getInputProps()} disabled={isIncognito} />
 
       {/* Inline SVG upload icon */}
       <svg
@@ -37,7 +31,11 @@ export default function ResumeDropzone({ getRootProps, getInputProps, file }) {
         />
       </svg>
 
-      {file ? (
+      {isIncognito ? (
+        <p className="text-sm text-gray-500">
+          File upload disabled in Private Browsing Mode
+        </p>
+      ) : file ? (
         <p className="text-sm text-gray-700">
           Selected: <strong>{file.name}</strong>
         </p>

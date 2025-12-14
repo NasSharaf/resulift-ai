@@ -1,0 +1,8 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Force Tailwind to include utility classes */
+@layer utilities {
+  .pdf { @apply p-8 w-full text-gray-900 bg-white; }
+}
