@@ -142,7 +142,7 @@ export async function checkAndConsumeUsage(opts: {
 
     return {
       allowed: true,
-      reason: "FREE",
+      reason: "FREE_LIMIT",
       remaining: freeCredits - (freeUsed + 1),
     };
   }
@@ -164,7 +164,7 @@ export async function checkAndConsumeUsage(opts: {
 
   return {
     allowed: true,
-    reason: "ANON",
+    reason: "ANON_LIMIT",
     remaining: 3 - (anon.resumeCount + 1),
   };
 }
@@ -184,10 +184,10 @@ export async function getUsageStatus(opts: {
     if (paid) return { type: "PAID", remaining: Infinity };
 
     const profile = await getFreeUserUsage(userId);
-    if (!profile) return { type: "FREE", remaining: 0 };
+    if (!profile) return { type: "FREE_LIMIT", remaining: 0 };
 
     return {
-      type: "FREE",
+      type: "FREE_LIMIT",
       remaining: profile.freeCredits - profile.freeUsed,
     };
   }
@@ -196,10 +196,10 @@ export async function getUsageStatus(opts: {
     const anon = await getAnonymousUsage(visitorId);
 
     return {
-      type: "ANON",
+      type: "ANON_LIMIT",
       remaining: 3 - anon.resumeCount,
     };
   }
 
-  return { type: "ANON", remaining: 0 };
+  return { type: "ANON_LIMIT", remaining: 0 };
 }

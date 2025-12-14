@@ -1,12 +1,12 @@
 // app/api/fetch-resume/route.ts
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { eq } from "drizzle-orm";
 import { getAuth } from "@clerk/nextjs/server";
 import { db } from "@/db";
 import { cookies } from "next/headers";
 import { resumes } from "@/db/schema";
 
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
   const { userId } = getAuth(req);
   const cookieStore = await cookies();
   let visitorId = cookieStore.get("resumatch_vid")?.value;

@@ -1,5 +1,5 @@
 // app/api/user-info/route.ts
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { getAuth } from "@clerk/nextjs/server";
 import { cookies } from "next/headers";
 
@@ -8,7 +8,7 @@ import { userProfiles, anonymousVisitors } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { isSubscribed, getUsageStatus } from "@/app/utils/usageLimits";
 
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
   const { userId } = getAuth(req);
 
   const cookieStore = await cookies();
