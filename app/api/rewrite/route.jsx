@@ -3,8 +3,11 @@
 import { WebPDFLoader } from "@langchain/community/document_loaders/web/pdf";
 import { ChatOpenAI } from "@langchain/openai";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
-import { calculateATSScore } from "@/app/utils/atsScoring";
+import { getAuth } from "@clerk/nextjs/server";
+import { cookies } from "next/headers";
+import { NextResponse } from "next/server";
 import { z } from "zod";
+import { checkAndConsumeUsage } from "@/app/utils/usageLimits";
 
 export const maxDuration = 60;
 
@@ -327,6 +330,53 @@ function resumeJsonToText(resumeJson) {
 
 export async function POST(req) {
   try {
+    // 1. Incognito check
+    const isIncognitoHeader = req.headers.get("x-incognito") === "true";
+    if (isIncognitoHeader) {
+      return new Response(
+          JSON.stringify({ error: "Incognito mode is not allowed." }),
+          { status: 403, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    // 2. Auth
+    const { userId } = getAuth(req);
+
+    // 3. Cookies
+    const cookieStore = await cookies();
+    let visitorId = cookieStore.get("resumatch_vid")?.value;
+
+    // 4. No userId and not cookie == private/blocked
+    if (!userId && !visitorId) {
+        visitorId = crypto.randomUUID();
+        cookieStore.set("resumatch_vid", visitorId, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "lax",
+            path: "/",
+            maxAge: 60 * 60 * 24 * 365
+        });
+    }
+
+    const isLoggedIn = !!userId;
+
+    const usage = await checkAndConsumeUsage({
+      userId,
+      visitorId
+    });
+
+    if (!usage.allowed) {
+      // Return structured reason for frontend modal
+      return NextResponse.json(
+        {
+          error: usage.reason,        // "ANON_LIMIT" | "FREE_LIMIT" | "PAID"
+          remaining: usage.remaining, // number or 0
+        },
+        { status: 402 }
+      );
+    }
+
+    // Validate input
     const body = await req.json();
     const { resumeURL, jobDesc } = body;
 

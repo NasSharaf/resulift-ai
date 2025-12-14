@@ -1,147 +1,36 @@
-import React from 'react';
-import { formatLocation } from "./utils/formatLocation";
-import { groupSkills } from "./utils/groupSkills";
+import React from "react";
+import { BaseTemplate } from "./BaseTemplate";
 
 export function PaperTemplate({ jsonResume }) {
-  if (!jsonResume) return null;
-
-  const { basics = {}, work = [], education = [], skills = {}, projects = [], publications = [] } = jsonResume;
-  const grouped = groupSkills(skills);
-
   return (
-    <div className="resume-template paper bg-white text-gray-900 font-serif p-8 shadow-md">
+    <BaseTemplate
+      jsonResume={jsonResume}
 
-      {/* HEADER */}
-      <header className="text-center border-b-4 border-gray-900 pb-6 mb-8">
-        <h1 className="text-4xl font-bold tracking-wide">{basics.name}</h1>
+      /* CONTAINER */
+      containerClass="bg-white text-gray-900 font-serif p-10"
 
-        {basics.label && (
-          <p className="text-xl text-gray-700 italic">{basics.label}</p>
-        )}
+      /* HEADER */
+      headerContainerClass="text-center border-b-2 border-gray-800 pb-5 mb-8"
+      nameClass="text-4xl font-bold"
+      labelClass="text-base text-gray-700 italic mt-1"
+      contactClass="mt-2 text-sm text-gray-700 flex justify-center flex-wrap gap-4"
+      summaryClass="mt-4 italic text-base text-gray-800 leading-relaxed"
 
-        <div className="contact-info mt-2 text-sm text-gray-700 flex justify-center space-x-3">
+      /* SECTIONS */
+      sectionContainerClass="mb-8"
+      sectionTitleClass="text-xl font-bold uppercase tracking-wide border-b-2 border-gray-700 pb-1 mb-4"
 
-          {basics.email && <span>{basics.email}</span>}
-          {basics.phone && <span>| {basics.phone}</span>}
+      /* ITEMS */
+      itemContainerClass="mb-6 pb-4 border-b border-gray-200"
+      itemTitleClass="text-base font-semibold"
+      itemSubtitleClass="text-sm text-gray-700"
+      itemDateClass="text-xs text-gray-600"
+      itemSummaryClass="italic text-gray-700 mt-2 text-sm"
+      highlightsListClass="list-disc list-inside text-base text-gray-800 mt-2 space-y-1"
 
-          {formatLocation(basics.location) && (
-            <span>| {formatLocation(basics.location)}</span>
-          )}
-
-          {basics.website && (
-            <span>| <a href={basics.website} className="underline text-blue-700">
-              {basics.website}
-            </a></span>
-          )}
-        </div>
-
-        {basics.summary && (
-          <p className="mt-4 italic text-gray-700">{basics.summary}</p>
-        )}
-      </header>
-
-      {/* EXPERIENCE */}
-      <section>
-        <h2 className="text-2xl font-bold border-b-2 border-gray-700 pb-2 mb-4">
-          Professional Journey
-        </h2>
-
-        {work.map((job, idx) => (
-          <div key={idx} className="mb-6 pb-4 border-b border-gray-300">
-
-            <div className="flex justify-between items-center">
-              <div>
-                <h3 className="text-xl font-semibold text-gray-900">{job.position}</h3>
-                <p className="text-gray-700">{job.company}</p>
-              </div>
-
-              <p className="text-sm text-gray-600">
-                {job.startDate} – {job.endDate || "Present"}
-              </p>
-            </div>
-
-            {job.summary && (
-              <p className="italic mt-2 text-gray-700">{job.summary}</p>
-            )}
-
-            {job.highlights?.length > 0 && (
-              <ul className="list-disc list-inside text-gray-700 mt-2">
-                {job.highlights.map((h, i) => <li key={i}>{h}</li>)}
-              </ul>
-            )}
-          </div>
-        ))}
-      </section>
-
-      {/* SKILLS */}
-      <section className="mt-8">
-        <h2 className="text-2xl font-bold border-b-2 border-gray-700 pb-2 mb-4">
-          Skills
-        </h2>
-
-        <div className="space-y-4">
-          {Object.entries(grouped).map(([group, list]) => (
-            <p key={group} className="text-gray-700 text-sm">
-                <span className="font-semibold capitalize">
-                {group.replace(/_/g, " ")}:
-                </span>{" "}
-                {list.join(", ")}
-            </p>
-            ))}
-        </div>
-      </section>
-
-      {/* EDUCATION */}
-      <section className="mt-8">
-        <h2 className="text-2xl font-bold border-b-2 border-gray-700 pb-2 mb-4">
-          Education
-        </h2>
-
-        {education.map((edu, idx) => (
-          <div key={idx} className="mb-4">
-            <h3 className="text-xl font-bold text-gray-900">
-              {edu.institution}
-            </h3>
-            <p className="text-gray-700">
-              {edu.studyType} in {edu.area}
-            </p>
-            <p className="text-sm text-gray-600">
-              {edu.startDate} – {edu.endDate || "Present"}
-            </p>
-          </div>
-        ))}
-      </section>
-
-      {/* PROJECTS */}
-      <section className="mt-8">
-        <h2 className="text-2xl font-bold border-b-2 border-gray-700 pb-2 mb-4">
-          Projects
-        </h2>
-
-        {projects.map((proj, idx) => (
-          <div key={idx} className="mb-4">
-            <h3 className="text-xl font-semibold text-gray-900">{proj.name}</h3>
-            <p className="text-gray-700">{proj.description}</p>
-
-            {proj.technologies && (
-              <p className="text-sm text-gray-600 mt-1">
-                <strong>Tech:</strong> {proj.technologies}
-              </p>
-            )}
-          </div>
-        ))}
-      </section>
-
-      {/* PUBLICATIONS */}
-      <section className="mt-8">
-        <h2 className="text-2xl font-bold border-b-2 border-gray-700 pb-2 mb-4">
-          Publications
-        </h2>
-
-        <ul className="list-disc list-inside text-gray-700">
-          {publications.map((pub, idx) => <li key={idx}>{pub.citation}</li>)}
-        </ul>
-      </section>
-    </div>
+      /* SKILLS */
+      skillsTextClass="text-base text-gray-800"
+    />
   );
 }
+

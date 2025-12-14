@@ -1,5 +1,5 @@
 // components/LargeInput.jsx
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { sourceCodePro } from "../styles/fonts";
 
 const LargeInput = ({
@@ -11,6 +11,7 @@ const LargeInput = ({
   error,
   disableButton,
   labelText,
+  isIncognito, 
 }) => {
   const handleKeyDown = (e) => {
     // Allow normal Enter for newlines; use Ctrl+Enter / Cmd+Enter to submit
@@ -21,6 +22,22 @@ const LargeInput = ({
       }
     }
   };
+
+  const handleClear = () => {
+    handlePromptChange({ target: { value: "" } });
+  };
+
+  const [freeRemaining, setFreeRemaining] = useState(null);
+  
+  // Free uses remaining
+  useEffect(() => {
+    fetch("/api/free-usage")
+      .then(r => r.json())
+      .then(data => {
+        setFreeRemaining(data.remaining);
+      })
+      .catch(() => {});
+  }, []);
 
   return (
     <>
@@ -38,17 +55,30 @@ const LargeInput = ({
               onChange={handlePromptChange}
               onKeyDown={handleKeyDown}
               placeholder={placeHolderText || "Paste the job description here…"}
-              className="w-full h-full p-4 text-sm text-gray-900 resize-none outline-none border border-gray-200 rounded-lg"
+              disabled={isIncognito}
+              className={`w-full h-full p-4 text-sm text-gray-900 resize-none outline-none border rounded-lg ${
+                isIncognito ? "bg-gray-100 opacity-50 cursor-not-allowed" : "border-gray-200"
+              }`}
             />
           </div>
 
-          <div className="pt-4">
+          <div className="pt-4 flex flex-col gap-3">
+            {/* Tailor Button */}
             <button
               onClick={handleSubmit}
-              disabled={disableButton}
-              className="px-4 py-2 rounded-full bg-black text-white text-xs font-semibold hover:bg-gray-800 disabled:opacity-50"
+              disabled={disableButton || isIncognito}
+              className="px-4 py-2 rounded-full bg-black text-white text-sm font-semibold hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {buttonText || "Tailor My Resume"}
+            </button>
+
+            {/* Clear Button */}
+            <button
+              onClick={handleClear}
+              disabled={isIncognito}
+              className="px-4 py-2 rounded-full bg-white border border-black text-black text-sm font-semibold hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Clear
             </button>
           </div>
         </div>

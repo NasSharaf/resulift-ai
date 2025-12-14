@@ -1,141 +1,150 @@
-// app/api/upload/route.ts
+// app/api/upload/route.js
 import { NextResponse } from "next/server";
 import { put } from "@vercel/blob";
 import { eq } from "drizzle-orm";
 import { getAuth } from "@clerk/nextjs/server";
+import { cookies } from "next/headers";
 import { db } from "@/db";
 import { resumes } from "@/db/schema";
 import { extractResumeText } from "@/app/utils/pdfExtraction";
 
+export const runtime = "nodejs";
+
 export async function POST(req) {
-  // Temporarily hardcode user ID
-  // Get the authenticated user
-    const { userId } = getAuth(req);
-    // If no user is authenticated, return unauthorized
-    if (!userId) {
-      return NextResponse.json({
-        error: "Unauthorized",
-      }, { status: 401 });
-    }
+  const { userId } = getAuth(req);
+  const isIncognito = req.headers.get("x-incognito") === "true";
+
+  if (isIncognito) {
+    return NextResponse.json(
+      { error: "Resumatch is not available in private browsing mode." },
+      { status: 403 }
+    );
+  }
+
+  // ------------------------------------
+  // CREATE ANONYMOUS VISITOR COOKIE
+  // ------------------------------------
+  const cookieStore = await cookies();
+  let visitorId = cookieStore.get("resumatch_vid")?.value;
+
+  if (!userId && !visitorId) {
+    visitorId = crypto.randomUUID();
+    cookieStore.set("resumatch_vid", visitorId, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 365
+    });
+  }
 
   try {
-    const contentType = req.headers.get('content-type');
+    const contentType = req.headers.get("content-type") || "";
 
-    if (contentType?.includes('multipart/form-data')) {
-      // New file upload
+    // -------------------------------------------------
+    // CASE 1: NEW FILE UPLOAD (multipart/form-data)
+    // -------------------------------------------------
+    if (contentType.includes("multipart/form-data")) {
       const form = await req.formData();
-      
-      // Log form contents
-      for (const [key, value] of form.entries()) {
-        console.log(`${key}:`, value);
-      }
-
       const file = form.get("file");
 
-      if (!file || file.size === 0) {
-        console.error("No file or empty file");
-        return NextResponse.json({ 
-          error: "No file uploaded.", 
-          details: "File is empty or not provided" 
-        }, { status: 400 });
+      if (!file || typeof file === "string" || file.size === 0) {
+        return NextResponse.json({ error: "No file uploaded." }, { status: 400 });
       }
 
-      // More detailed file logging
-      console.log("File Details:", {
-        name: file.name,
-        type: file.type,
-        size: file.size
-      });
-
-      // Validate file type
-      if (file.type !== 'application/pdf') {
-        console.error("Invalid file type", file.type);
-        return NextResponse.json({ 
-          error: "Invalid file type", 
-          details: "Only PDF files are allowed" 
-        }, { status: 400 });
+      if (file.type !== "application/pdf") {
+        return NextResponse.json({ error: "Only PDF files allowed." }, { status: 400 });
       }
 
-      // Convert file to buffer
       const buffer = Buffer.from(await file.arrayBuffer());
-
-      // Upload PDF to blob storage
-      const blob = await put(file.name, buffer, { 
+      const blob = await put(file.name, buffer, {
         access: "public",
-        contentType: file.type 
+        contentType: file.type
       });
 
-      // Extract text from PDF
-      let extractedText = '';
+      let extractedText = "";
       try {
         extractedText = await extractResumeText(blob.url);
-      } catch (extractionError) {
-        console.error("Text Extraction Failed:", extractionError);
+      } catch (err) {
+        console.error("PDF extraction failed:", err);
       }
 
-      // Save to database
-      const resumeRecord = await db.insert(resumes).values({
-        id: crypto.randomUUID(),
-        userId,
-        title: file.name,
-        blobUrl: blob.url,
-        extractedText,
-        createdAt: new Date(),
-      }).returning({ id: resumes.id });
+      // LOGGED-IN USERS GET DB ENTRY
+      if (userId) {
+        const inserted = await db
+          .insert(resumes)
+          .values({
+            id: crypto.randomUUID(),
+            userId,
+            title: file.name,
+            blobUrl: blob.url,
+            extractedText,
+            createdAt: new Date()
+          })
+          .returning({ id: resumes.id });
 
+        return NextResponse.json({
+          success: true,
+          resumeURL: blob.url,
+          resumeId: inserted[0].id,
+          extractedText,
+          fileName: file.name,
+          fileSize: file.size
+        });
+      }
+
+      // ANONYMOUS USERS: NO DB WRITE
       return NextResponse.json({
         success: true,
         resumeURL: blob.url,
-        resumeId: resumeRecord[0].id,
+        resumeId: null,
         extractedText,
-        fileSize: file.size,
         fileName: file.name,
-      });
-
-    } else {
-      // Existing resume selection
-      const body = await req.json();
-
-      const resumeId = body?.resumeId;
-
-      if (!resumeId) {
-        console.error("No resume ID provided");
-        return NextResponse.json({ 
-          error: "No resume selected", 
-          details: "Please provide a valid resumeId" 
-        }, { status: 400 });
-      }
-
-      // Fetch existing resume
-      const existingResume = await db.select()
-        .from(resumes)
-        .where(eq(resumes.id, resumeId))
-        .get();
-
-      if (!existingResume) {
-        console.error("Resume not found", resumeId);
-        return NextResponse.json({ 
-          error: "Resume not found", 
-          details: "Selected resume does not exist" 
-        }, { status: 404 });
-      }
-
-      return NextResponse.json({
-        success: true,
-        resumeURL: existingResume.blobUrl,
-        resumeId: existingResume.id,
-        extractedText: existingResume.extractedText,
-        fileName: existingResume.title,
+        fileSize: file.size
       });
     }
+
+    // -------------------------------------------------
+    // CASE 2: EXISTING RESUME SELECTION (JSON)
+    // -------------------------------------------------
+    const body = await req.json().catch(() => null);
+
+    if (!body || typeof body !== "object") {
+      return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+    }
+
+    const { resumeId } = body;
+
+    if (!userId) {
+      return NextResponse.json(
+        { error: "Anonymous users cannot load saved resumes." },
+        { status: 403 }
+      );
+    }
+
+    if (!resumeId) {
+      return NextResponse.json({ error: "No resumeId provided" }, { status: 400 });
+    }
+
+    const rows = await db.select().from(resumes).where(eq(resumes.id, resumeId)).limit(1);
+    const existingResume = rows[0];
+
+    if (!existingResume) {
+      return NextResponse.json({ error: "Resume not found" }, { status: 404 });
+    }
+
+    return NextResponse.json({
+      success: true,
+      resumeURL: existingResume.blobUrl,
+      resumeId: existingResume.id,
+      extractedText: existingResume.extractedText,
+      fileName: existingResume.title
+    });
   } catch (err) {
     console.error("UPLOAD ERROR:", err);
-    
-    return NextResponse.json({
-      error: "Server error",
-      details: err.message,
-    }, { status: 500 });
+    return NextResponse.json(
+      { error: "Server error", details: err?.message ?? "Unknown error" },
+      { status: 500 }
+    );
   }
 }
-
-export const runtime = 'nodejs';
