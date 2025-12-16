@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
     const profile = rows[0];
 
     const referralLink = profile?.referralCode
-      ? `${process.env.NEXT_PUBLIC_APP_URL || "https://resumatch.ai"}/sign-up?ref=${profile.referralCode}`
+      ? `${process.env.NEXT_PUBLIC_APP_URL || "https://resumatch-ai.vercel.app"}/sign-up?ref=${profile.referralCode}`
       : null;
 
     return NextResponse.json({

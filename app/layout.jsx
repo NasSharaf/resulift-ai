@@ -32,7 +32,7 @@ export default function RootLayout({
         <body className={`${instrumentSans.className} ${geistSans.variable} ${geistMono.variable} antialiased h-screen flex flex-col`}>
           <Navbar />
 
-          <main className="flex-1 flex flex-col pt-20 px-6 max-w-screen-xl mx-auto w-full">
+          <main className="flex-1 min-h-0 overflow-hidden flex flex-col pt-20 px-6 max-w-screen-xl mx-auto w-full">
             {children}
           </main>
 

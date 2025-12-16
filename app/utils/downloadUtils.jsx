@@ -1,5 +1,5 @@
 import ReactDOMServer from 'react-dom/server';
-import { TEMPLATES } from './resume-templates';
+import { TEMPLATES } from '../components/resume-templates';
 
 export async function generateThemedHTML(jsonResume, theme = 'even') {
   const Template = TEMPLATES[theme] || TEMPLATES.even;
@@ -50,20 +50,24 @@ export async function downloadPDF(jsonResume, theme = "even") {
   URL.revokeObjectURL(url);
 }
 
-export async function downloadWord(jsonResume) {
+export async function downloadWord(jsonResume, theme = "even") {
   const res = await fetch("/api/download-word", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ jsonResume }),
+    body: JSON.stringify({ jsonResume, theme }),
   });
+
+  if (!res.ok) {
+    const text = await res.text();
+    console.error("Word download error:", res.status, text);
+    throw new Error("Failed to generate Word doc");
+  }
 
   const blob = await res.blob();
   const url = URL.createObjectURL(blob);
-
   const a = document.createElement("a");
   a.href = url;
   a.download = "resume.docx";
   a.click();
-
   URL.revokeObjectURL(url);
 }

@@ -41,7 +41,7 @@ export default function ResumeDropzone({ getRootProps, getInputProps, file, isIn
         </p>
       ) : (
         <p className="text-sm text-gray-500">
-          <strong>Drag & drop</strong> your resume PDF here  
+          <strong>Drag & drop</strong> your resume (PDF or Word) here
           <br /> or click to browse
         </p>
       )}

@@ -12,7 +12,7 @@ import SignupRequiredModal from "./components/SignupRequiredModal";
 import ReferralOrUpgradeModal from "./components/ReferralOrUpgradeModal";
 import Spinner from "./components/Spinner";
 import detectIncognito from "@/app/utils/detectIncognito";
-import { generateThemedHTML, downloadPDF, downloadWord } from "./components/downloadUtils";
+import { generateThemedHTML, downloadPDF, downloadWord } from "./utils/downloadUtils";
 
 export const maxDuration = 60;
 
@@ -182,7 +182,7 @@ export default function Home() {
       }
 
       const uploadData = await uploadRes.json();
-      const resumeURL = uploadData.resumeURL;
+      const { extractedText, resumeURL } = uploadData;
 
       // ---- REWRITE RESUME WITH STREAMING ----
       setStatus("rewriting");
@@ -193,7 +193,7 @@ export default function Home() {
           "Content-Type": "application/json",
           "x-incognito": isIncognito ? "true" : "false",
         },
-        body: JSON.stringify({ resumeURL, jobDesc }),
+        body: JSON.stringify({ resumeText: extractedText, resumeURL, jobDesc }),
       });
 
       if (!rewriteRes.ok) {
@@ -292,8 +292,8 @@ export default function Home() {
   };
 
   const handleDownloadWord = async () => {
-    const html = await generateThemedHTML(jsonResume, theme);
-    await downloadWord(html);
+    if (!jsonResume) return;
+    await downloadWord(jsonResume, theme);
   };
 
   // After referral or upgrade, refresh credits
@@ -350,7 +350,7 @@ export default function Home() {
   }
 
   return (
-    <div className="flex justify-center flex-col h-full">
+    <div className="flex flex-col h-full min-h-0 overflow-hidden">
       {userInfo && (
         <div className="flex justify-between items-center mb-4 p-3 bg-white border rounded-xl text-sm font-medium">
           
@@ -384,148 +384,153 @@ export default function Home() {
         </div>
       )}
 
-      <ThreeColumnLayout
-        leftChildren={
-          <div className="flex flex-col h-full">
+      <div className="flex-1 min-h-0">
+        <ThreeColumnLayout
+          leftChildren={
+            <div className="flex flex-col h-full">
 
-            {/* STEP 1 HEADER */}
-            <div className="mb-4">
-              <p className="font-bold text-md">Step 1 - Upload or Select your resume</p>
-            </div>
-
-            {/* DROPDOWN */}
-            {savedResumes.length > 0 && (
+              {/* STEP 1 HEADER */}
               <div className="mb-4">
-                <label
-                  htmlFor="resume-select"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Select an existing resume
-                </label>
-
-                <select
-                  id="resume-select"
-                  value={selectedResumeId || ''}
-                  onChange={handleResumeSelect}
-                  className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-full text-sm bg-white"
-                >
-                  <option value="">Choose a resume</option>
-                  {savedResumes.map((resume) => (
-                    <option key={resume.id} value={resume.id}>
-                      {resume.title} (Uploaded: {new Date(resume.createdAt).toLocaleDateString()})
-                    </option>
-                  ))}
-                </select>
+                <p className="font-bold text-md">Step 1 - Upload or Select your resume</p>
               </div>
-            )}
 
-            {/* DROPZONE EXPANDS TO FILL COLUMN */}
-            <div className="flex-1 overflow-y-auto">
-              <Dropzone
-                onDrop={handleDrop}
-                accept={{ "application/pdf": [] }}
-                multiple={false}
-              >
-                {({ getRootProps, getInputProps }) => (
-                  <ResumeDropzone
-                    getRootProps={getRootProps}
-                    getInputProps={getInputProps}
-                    file={file}
-                    isIncognito={isIncognito} 
-                  />
-                )}
-              </Dropzone>
-            </div>
-
-            <p className="text-xs text-gray-500 mt-1">
-              Resumes are processed securely and not shared
-            </p>
-          </div>
-        }
-        centerChildren={
-          <>
-            <LargeInput
-              prompt={jobDesc}
-              handlePromptChange={handlePromptChange}
-              handleSubmit={handleRun}
-              placeHolderText="Copy and paste your job description here"
-              buttonText={buttonLabel}
-              disableButton={status !== "idle"}
-              error={error}
-              labelText="Step 2 — Paste job description"
-              isIncognito={isIncognito}  
-            />
-          </>
-        }
-        rightChildren={
-          <div className="flex flex-col h-full">
-            <div>
-              <div>
-                <p className="font-bold text-md mb-2">Step 3 - Download your tailored resume</p>
-                  {/* ATS SCORE BAR SHOULD BE HERE */}
-                  {(jsonResume?.atsScore || jsonResume?.atsScore_rewrite) && (
-                    <div className="mb-4"> {/* Added margin for visibility */}
-                      <ATSScoreBar
-                        original={originalScore}
-                        rewritten={rewrittenScore}
-                        disabled={!jsonResume}
-                        onOpen={() => setShowModal(true)}
-                      />
-                    </div>
-                  )}
-
-                {status === "rewriting" && (
-                  <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
-                    <Spinner />
-                    <span>Generating your tailored resume… this may take up to 1 minute.</span>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="flex-1 overflow-y-auto">
-              {jsonResume ? (
-                <ResumePreview jsonResume={jsonResume} theme={theme} themedHTML={themedHTML} />
-              ) : (
-                <div className="w-full h-full border border-dashed rounded-lg bg-gray-50" />
-              )}
-            </div>
-
-            {jsonResume && (
-              <div className="pt-4 flex flex-col gap-3">
-                <div>
-                  <label className="text-xs font-semibold text-gray-600">
-                    Select Template:
-                  </label>
-                  <select
-                    value={theme}
-                    onChange={(e) => setTheme(e.target.value)}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-full text-sm"
+              {/* DROPDOWN */}
+              {savedResumes.length > 0 && (
+                <div className="mb-4">
+                  <label
+                    htmlFor="resume-select"
+                    className="block text-sm font-medium text-gray-700"
                   >
-                    <option value="even">Even (Clean Minimal)</option>
-                    <option value="paper">Paper</option>
-                    <option value="onepage">OnePage</option>
-                    <option value="elegant">Elegant</option>
-                    <option value="flat">Flat</option>
+                    Select an existing resume
+                  </label>
+
+                  <select
+                    id="resume-select"
+                    value={selectedResumeId || ''}
+                    onChange={handleResumeSelect}
+                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-full text-sm bg-white"
+                  >
+                    <option value="">Choose a resume</option>
+                    {savedResumes.map((resume) => (
+                      <option key={resume.id} value={resume.id}>
+                        {resume.title} (Uploaded: {new Date(resume.createdAt).toLocaleDateString()})
+                      </option>
+                    ))}
                   </select>
                 </div>
-                <button
-                  onClick={handleDownloadPDF}
-                  className="px-4 py-2 rounded-full bg-black text-white text-sm font-semibold hover:bg-gray-800"
+              )}
+
+              {/* DROPZONE EXPANDS TO FILL COLUMN */}
+              <div className="flex-1 overflow-y-auto">
+                <Dropzone
+                  onDrop={handleDrop}
+                  accept={{
+                    "application/pdf": [],
+                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": []
+                  }}
+                  multiple={false}
                 >
-                  Download PDF
-                </button>
-                <button
-                  onClick={handleDownloadWord}
-                  className="px-4 py-2 rounded-full border border-black text-black text-sm font-semibold hover:bg-gray-100"
-                >
-                  Download Word
-                </button>
+                  {({ getRootProps, getInputProps }) => (
+                    <ResumeDropzone
+                      getRootProps={getRootProps}
+                      getInputProps={getInputProps}
+                      file={file}
+                      isIncognito={isIncognito} 
+                    />
+                  )}
+                </Dropzone>
               </div>
-            )}
-          </div>
-        }
-      />
+
+              <p className="text-xs text-gray-500 mt-1">
+                Resumes are processed securely and not shared
+              </p>
+            </div>
+          }
+          centerChildren={
+            <>
+              <LargeInput
+                prompt={jobDesc}
+                handlePromptChange={handlePromptChange}
+                handleSubmit={handleRun}
+                placeHolderText="Copy and paste your job description here"
+                buttonText={buttonLabel}
+                disableButton={status !== "idle"}
+                error={error}
+                labelText="Step 2 — Paste job description"
+                isIncognito={isIncognito}  
+              />
+            </>
+          }
+          rightChildren={
+            <div className="flex flex-col h-full">
+              <div>
+                <div>
+                  <p className="font-bold text-md mb-2">Step 3 - Download your tailored resume</p>
+                    {/* ATS SCORE BAR SHOULD BE HERE */}
+                    {(jsonResume?.atsScore || jsonResume?.atsScore_rewrite) && (
+                      <div className="mb-4"> {/* Added margin for visibility */}
+                        <ATSScoreBar
+                          original={originalScore}
+                          rewritten={rewrittenScore}
+                          disabled={!jsonResume}
+                          onOpen={() => setShowModal(true)}
+                        />
+                      </div>
+                    )}
+
+                  {status === "rewriting" && (
+                    <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
+                      <Spinner />
+                      <span>Generating your tailored resume… this may take up to 1 minute.</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex-1 min-h-0 overflow-y-auto">
+                {jsonResume ? (
+                  <ResumePreview jsonResume={jsonResume} theme={theme} themedHTML={themedHTML} />
+                ) : (
+                  <div className="w-full h-full border border-dashed rounded-lg bg-gray-50" />
+                )}
+              </div>
+
+              {jsonResume && (
+                <div className="pt-4 flex flex-col gap-3">
+                  <div>
+                    <label className="text-xs font-semibold text-gray-600">
+                      Select Template:
+                    </label>
+                    <select
+                      value={theme}
+                      onChange={(e) => setTheme(e.target.value)}
+                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-full text-sm"
+                    >
+                      <option value="even">Even (Clean Minimal)</option>
+                      <option value="paper">Paper</option>
+                      <option value="onepage">OnePage</option>
+                      <option value="elegant">Elegant</option>
+                      <option value="flat">Flat</option>
+                    </select>
+                  </div>
+                  <button
+                    onClick={handleDownloadPDF}
+                    className="px-4 py-2 rounded-full bg-black text-white text-sm font-semibold hover:bg-gray-800"
+                  >
+                    Download PDF
+                  </button>
+                  <button
+                    onClick={handleDownloadWord}
+                    className="px-4 py-2 rounded-full border border-black text-black text-sm font-semibold hover:bg-gray-100"
+                  >
+                    Download Word
+                  </button>
+                </div>
+              )}
+            </div>
+          }
+        />
+      </div>
       <ATSModal
         show={showModal}
         onClose={() => setShowModal(false)}
