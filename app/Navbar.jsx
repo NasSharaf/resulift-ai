@@ -12,7 +12,18 @@ import {
 
 const Navbar = () => {
   const [isClient, setIsClient] = useState(false);
+  const [userInfo, setUserInfo] = useState(null);
+
+  useEffect(() => {
+    fetch("/api/user-info", { credentials: "include" })
+      .then(res => res.json())
+      .then(setUserInfo)
+      .catch(() => {});
+  }, []);
+
   useEffect(() => setIsClient(true), []);
+
+  const isSubscribed = userInfo?.isSubscribed;
 
   return (
     <nav className="fixed top-0 left-0 z-20 w-full h-16 bg-gray-50/90 backdrop-blur-sm border-b border-gray-200">
@@ -50,11 +61,14 @@ const Navbar = () => {
             </button>
             <button
               onClick={() => {
+                if (!isSubscribed) return;
                 fetch("/api/portal", { method: "POST", credentials: "include" })
                   .then(r => r.json())
                   .then(d => window.location.href = d.url);
               }}
+              disabled={!isSubscribed}
               className="px-4 py-2 rounded-full border border-black text-black text-sm font-semibold hover:bg-black hover:text-white transition"
+              title={!isSubscribed ? "You must be subscribed to manage billing" : ""}
             >
               Manage Billing
             </button>

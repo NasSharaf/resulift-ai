@@ -1,5 +1,4 @@
 // app/utils/usageLimits.ts
-
 import { db } from "@/db";
 import { eq, sql } from "drizzle-orm";
 import { anonymousVisitors, subscriptions, userProfiles } from "@/db/schema";
@@ -7,6 +6,11 @@ import { anonymousVisitors, subscriptions, userProfiles } from "@/db/schema";
 /* ---------------------------------------------------------
    GET SUBSCRIPTION STATE
 --------------------------------------------------------- */
+function isAdmin(userId?: string | null) {
+  if (!userId) return false;
+  const admins = process.env.ADMIN_USER_IDS?.split(",") ?? [];
+  return admins.includes(userId);
+}
 
 export async function isSubscribed(userId: string): Promise<boolean> {
   const sub = await db
@@ -107,9 +111,17 @@ export async function checkAndConsumeUsage(opts: {
 }): Promise<{
   allowed: boolean;
   remaining?: number; // remaining free credits
-  reason?: "ANON_LIMIT" | "FREE_LIMIT" | "PAID";
+  reason?: "ANON_LIMIT" | "FREE_LIMIT" | "PAID" | "ADMIN";
 }> {
   const { userId, visitorId } = opts;
+
+  if (isAdmin(userId)) {
+    return {
+      allowed: true,
+      remaining: Infinity,
+      reason: "ADMIN",
+    };
+  }
 
   /* ---------------------------------
      1) PAID USER → unlimited

@@ -7,6 +7,7 @@ import { cookies } from "next/headers";
 import { db } from "@/db";
 import { resumes } from "@/db/schema";
 import { extractResumeText } from "@/app/utils/pdfExtraction";
+import mammoth from "mammoth";
 
 export const runtime = "nodejs";
 
@@ -52,8 +53,16 @@ export async function POST(req) {
         return NextResponse.json({ error: "No file uploaded." }, { status: 400 });
       }
 
-      if (file.type !== "application/pdf") {
-        return NextResponse.json({ error: "Only PDF files allowed." }, { status: 400 });
+      const isPDF = file.type === "application/pdf";
+      const isDOCX =
+        file.type ===
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+
+      if (!isPDF && !isDOCX) {
+        return NextResponse.json(
+          { error: "Only PDF or Word documents allowed." },
+          { status: 400 }
+        );
       }
 
       const buffer = Buffer.from(await file.arrayBuffer());
@@ -63,10 +72,17 @@ export async function POST(req) {
       });
 
       let extractedText = "";
+
       try {
-        extractedText = await extractResumeText(blob.url);
+        if (isPDF) {
+          extractedText = await extractResumeText(blob.url);
+        } else if (isDOCX) {
+          const buffer = Buffer.from(await file.arrayBuffer());
+          const { value } = await mammoth.extractRawText({ buffer });
+          extractedText = value;
+        }
       } catch (err) {
-        console.error("PDF extraction failed:", err);
+        console.error("Resume extraction failed:", err);
       }
 
       // LOGGED-IN USERS GET DB ENTRY
