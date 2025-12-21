@@ -2,8 +2,11 @@
 export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
-import puppeteer from "puppeteer";
 import { renderResumeHTML } from "@/renderTemplate";
+import puppeteer from "puppeteer-core";
+import chromium from "@sparticuz/chromium";
+
+const isProd = process.env.NODE_ENV === "production";
 
 export async function POST(req) {
   try {
@@ -16,10 +19,19 @@ export async function POST(req) {
     const html = await renderResumeHTML(jsonResume, theme);
 
     // Launch Puppeteer
-    const browser = await puppeteer.launch({
-      headless: "new",
-      args: ["--no-sandbox", "--disable-setuid-sandbox"],
-    });
+    const browser = await puppeteer.launch(
+      isProd
+        ? {
+            args: chromium.args,
+            defaultViewport: chromium.defaultViewport,
+            executablePath: await chromium.executablePath(),
+            headless: chromium.headless,
+          }
+        : {
+            channel: "chrome", // 👈 THIS FIXES IT
+            headless: "new",
+          }
+    );
 
     const page = await browser.newPage();
     await page.setContent(html, { waitUntil: "networkidle0" });
@@ -32,13 +44,17 @@ export async function POST(req) {
 
     await browser.close();
 
-    return new NextResponse(pdf, {
+    const uint8 = new Uint8Array(pdf);
+
+    return new Response(uint8, {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": "attachment; filename=resume.pdf",
+        "Content-Disposition": 'attachment; filename="resume.pdf"',
+        "Content-Length": uint8.byteLength.toString(),
+        "Cache-Control": "no-store",
       },
-    });
+});
   } catch (err) {
     console.error("PDF Error:", err);
     return NextResponse.json({ error: "PDF generation failed" }, { status: 500 });

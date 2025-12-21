@@ -91,7 +91,7 @@ export async function POST(req: Request) {
         lastName,
         email,
         plan: "free",
-        freeCredits: 7,
+        freeCredits: 3,
         freeUsed: 0,
         referralCode,
         referredBy,

@@ -10,7 +10,8 @@ export default function ATSModal({
   rewrittenBreakdown,
   originalRecs,
   rewrittenRecs,
-  validationErrors
+  changeSummary,
+  validationErrors,
 }) {
   if (!show) return null;
 
@@ -37,6 +38,19 @@ export default function ATSModal({
             Tailored Score: {rewritten}
           </p>
         </div>
+
+        {changeSummary?.length > 0 && (
+          <div className="mb-6 p-4 bg-gray-50 border rounded-lg">
+            <h3 className="font-semibold text-sm mb-2">
+              Summary of Changes
+            </h3>
+            <ul className="list-disc ml-5 text-sm text-gray-700 space-y-1">
+              {changeSummary.map((item, i) => (
+                <li key={i}>{item}</li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {/* Breakdown Grid */}
         <div className="grid grid-cols-2 gap-6">

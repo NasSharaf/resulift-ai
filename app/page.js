@@ -34,6 +34,7 @@ export default function Home() {
   const [themedHTML, setThemedHTML] = useState(null);
   const [isIncognito, setIsIncognito] = useState(false);
   const [userInfo, setUserInfo] = useState(null);
+  const [previewLocked, setPreviewLocked] = useState(false);
 
   // Detect if incognito
   useEffect(() => {
@@ -58,6 +59,7 @@ export default function Home() {
     async function load() {
       const res = await fetch("/api/user-info", { credentials: "include" });
       const data = await res.json();
+      const previewLocked = !userInfo?.isSubscribed && typeof userInfo?.remaining === "number" && userInfo.remaining === 0;
       setUserInfo(data);
     }
     load();
@@ -135,8 +137,20 @@ export default function Home() {
     }
   };
 
+  const hasRewriteCredits = userInfo?.isSubscribed || (typeof userInfo?.remaining === "number" && userInfo.remaining > 0);
+
   // 3. Run "Upload → Rewrite"
   const handleRun = async () => {
+    // CLIENT-SIDE CREDIT GUARD
+    if (!hasRewriteCredits) {
+      if (!userInfo?.isLoggedIn) {
+        setShowSignupModal(true);
+      } else {
+        setShowReferralModal(true);
+      }
+      return;
+    }
+
     if (!file && !selectedResumeId) {
       setError("Please upload a new resume or select an existing one.");
       return;
@@ -235,6 +249,11 @@ export default function Home() {
               if (data.done && data.jsonResume) {
                 console.log(data);
                 setJsonResume(data.jsonResume);
+                setUserInfo(prev =>
+                  prev && !prev.isSubscribed
+                    ? { ...prev, remaining: Math.max(0, prev.remaining - 1) }
+                    : prev
+                );
                 setMessages((prev) => [
                   ...prev,
                   { text: "Resume updated for this job.", type: "bot" },
@@ -359,7 +378,17 @@ export default function Home() {
             {userInfo.isSubscribed ? (
               <span>Unlimited Rewrites</span>
             ) : (
-              <span>{userInfo.remaining} rewrites remaining</span>
+              <span className="flex items-center gap-1">
+                {userInfo.remaining > 0
+                  ? `${userInfo.remaining} / ${userInfo.limit} rewrites remaining`
+                  : "No rewrites remaining"}
+                <button
+                  onClick={() => setShowReferralModal(true)}
+                  className="underline text-black font-semibold hover:text-gray-700"
+                >
+                  Upgrade
+                </button>
+              </span>
             )}
           </div>
 
@@ -454,7 +483,7 @@ export default function Home() {
                 handleSubmit={handleRun}
                 placeHolderText="Copy and paste your job description here"
                 buttonText={buttonLabel}
-                disableButton={status !== "idle"}
+                disableButton={status !== "idle" || !hasRewriteCredits}
                 error={error}
                 labelText="Step 2 — Paste job description"
                 isIncognito={isIncognito}  
@@ -488,11 +517,28 @@ export default function Home() {
               </div>
 
               <div className="flex-1 min-h-0 overflow-y-auto">
-                {jsonResume ? (
+                {jsonResume && !previewLocked ? (
                   <ResumePreview jsonResume={jsonResume} theme={theme} themedHTML={themedHTML} />
-                ) : (
-                  <div className="w-full h-full border border-dashed rounded-lg bg-gray-50" />
-                )}
+                  ) : previewLocked ? (
+                    <div className="w-full h-full border rounded-lg bg-gray-50 flex items-center justify-center text-center p-6">
+                      <div>
+                        <p className="font-semibold mb-2">
+                          You’ve reached your free rewrite limit
+                        </p>
+                        <p className="text-sm text-gray-600 mb-4">
+                          Upgrade to unlock your tailored resume and continue editing.
+                        </p>
+                        <button
+                          onClick={() => setShowReferralModal(true)}
+                          className="px-4 py-2 rounded-full bg-black text-white text-sm font-semibold hover:bg-gray-800"
+                        >
+                          Upgrade
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="w-full h-full border border-dashed rounded-lg bg-gray-50" />
+                  )}
               </div>
 
               {jsonResume && (
@@ -515,12 +561,14 @@ export default function Home() {
                   </div>
                   <button
                     onClick={handleDownloadPDF}
+                    disabled={previewLocked}
                     className="px-4 py-2 rounded-full bg-black text-white text-sm font-semibold hover:bg-gray-800"
                   >
                     Download PDF
                   </button>
                   <button
                     onClick={handleDownloadWord}
+                    disabled={previewLocked}
                     className="px-4 py-2 rounded-full border border-black text-black text-sm font-semibold hover:bg-gray-100"
                   >
                     Download Word
@@ -540,6 +588,7 @@ export default function Home() {
         rewrittenBreakdown={rewrittenBreakdown}
         originalRecs={originalRecs}
         rewrittenRecs={rewrittenRecs}
+        changeSummary={jsonResume?.changeSummary}
         validationErrors={jsonResume?.validationErrors}
       />
       <SignupRequiredModal 

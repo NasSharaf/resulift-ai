@@ -14,15 +14,12 @@ export async function GET(req: NextRequest) {
   const cookieStore = await cookies();
   const visitorId = cookieStore.get("resumatch_vid")?.value || null;
 
-  // If logged in → return full user profile info
+  const usage = await getUsageStatus({ userId, visitorId });
+
+  // Logged-in user
   if (userId) {
-    // Paid?
     const subscribed = await isSubscribed(userId);
 
-    // Usage (free or paid)
-    const usage = await getUsageStatus({ userId, visitorId });
-
-    // User profile
     const rows = await db
       .select()
       .from(userProfiles)
@@ -32,40 +29,32 @@ export async function GET(req: NextRequest) {
     const profile = rows[0];
 
     const referralLink = profile?.referralCode
-      ? `${process.env.NEXT_PUBLIC_APP_URL || "https://resumatch-ai.vercel.app"}/sign-up?ref=${profile.referralCode}`
+      ? `${process.env.NEXT_PUBLIC_APP_URL || "https://resumatch-ai.vercel.app"}sign-up?ref=${profile.referralCode}`
       : null;
 
     return NextResponse.json({
       isLoggedIn: true,
       isSubscribed: subscribed,
-      freeCredits: profile?.freeCredits ?? 0,
-      freeUsed: profile?.freeUsed ?? 0,
-      remaining: usage.remaining ?? 0,
+      tier: subscribed ? "paid" : "free",
+
+      remaining: usage.remaining,
+      limit: usage.limit,          
+
       referralCode: profile?.referralCode ?? null,
       referralLink,
       referredBy: profile?.referredBy ?? null,
     });
   }
 
-  // Anonymous user → return 3 free usage info
-  if (visitorId) {
-    const usage = await getUsageStatus({ userId: null, visitorId });
-
-    return NextResponse.json({
-      isLoggedIn: false,
-      visitorId,
-      remaining: usage.remaining,
-      isSubscribed: false,
-      referralCode: null,
-      referralLink: null,
-    });
-  }
-
-  // No cookie, not logged in → treat as fully anonymous
+  // Anonymous user (cookie present OR not)
   return NextResponse.json({
     isLoggedIn: false,
-    visitorId: null,
-    remaining: 3,
+    tier: "anon",
+    visitorId,
+
+    remaining: usage.remaining,
+    limit: usage.limit,            
+
     isSubscribed: false,
     referralCode: null,
     referralLink: null,
