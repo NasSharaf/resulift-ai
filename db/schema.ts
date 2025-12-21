@@ -13,7 +13,7 @@ export const userProfiles = sqliteTable("user_profiles", {
   plan: text("plan").notNull().default("free"),   // "free", "pro"
   
   // NEW: credit system fields
-  freeCredits: integer("free_credits").notNull().default(7),  // always starts at 7
+  freeCredits: integer("free_credits").notNull().default(3),  // always starts at 7
   freeUsed: integer("free_used").notNull().default(0),
   referralCode: text("referral_code").unique(),             // assigned at signup
   referredBy: text("referred_by"),                          // who referred them
@@ -67,4 +67,10 @@ export const subscriptions = sqliteTable("subscriptions", {
   planId: text("plan_id").notNull(),
   status: text("status").notNull(), // 'active', 'past_due', 'canceled'
   currentPeriodEnd: integer("current_period_end", { mode: "timestamp" }).notNull(),
+});
+
+export const stripeEvents = sqliteTable("stripe_events", {
+  id: text("id").primaryKey(), // Stripe event ID
+  type: text("type").notNull(),
+  processedAt: integer("processed_at", { mode: "timestamp_ms" }).notNull(),
 });

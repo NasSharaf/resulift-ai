@@ -3,6 +3,11 @@ import { db } from "@/db";
 import { eq, sql } from "drizzle-orm";
 import { anonymousVisitors, subscriptions, userProfiles } from "@/db/schema";
 
+export const USAGE_LIMITS = {
+  ANON: 2,
+  FREE_DEFAULT: 3,
+};
+
 /* ---------------------------------------------------------
    GET SUBSCRIPTION STATE
 --------------------------------------------------------- */
@@ -168,7 +173,7 @@ export async function checkAndConsumeUsage(opts: {
 
   const anon = await getAnonymousUsage(visitorId);
 
-  if (anon.resumeCount >= 3) {
+  if (anon.resumeCount >= 2) {
     return { allowed: false, reason: "ANON_LIMIT", remaining: 0 };
   }
 
@@ -177,7 +182,7 @@ export async function checkAndConsumeUsage(opts: {
   return {
     allowed: true,
     reason: "ANON_LIMIT",
-    remaining: 3 - (anon.resumeCount + 1),
+    remaining: 2 - (anon.resumeCount + 1),
   };
 }
 
@@ -191,27 +196,51 @@ export async function getUsageStatus(opts: {
 }) {
   const { userId, visitorId } = opts;
 
+  /* ----------------------------
+     PAID USER
+  ---------------------------- */
   if (userId) {
     const paid = await isSubscribed(userId);
-    if (paid) return { type: "PAID", remaining: Infinity };
+    if (paid) {
+      return {
+        type: "PAID",
+        remaining: null,
+        limit: null,
+      };
+    }
 
     const profile = await getFreeUserUsage(userId);
-    if (!profile) return { type: "FREE_LIMIT", remaining: 0 };
+    if (!profile) {
+      return {
+        type: "FREE",
+        remaining: 0,
+        limit: USAGE_LIMITS.FREE_DEFAULT,
+      };
+    }
 
     return {
-      type: "FREE_LIMIT",
+      type: "FREE",
       remaining: profile.freeCredits - profile.freeUsed,
+      limit: profile.freeCredits,
     };
   }
 
+  /* ----------------------------
+     ANONYMOUS USER
+  ---------------------------- */
   if (visitorId) {
     const anon = await getAnonymousUsage(visitorId);
 
     return {
-      type: "ANON_LIMIT",
-      remaining: 3 - anon.resumeCount,
+      type: "ANON",
+      remaining: USAGE_LIMITS.ANON - anon.resumeCount,
+      limit: USAGE_LIMITS.ANON,
     };
   }
 
-  return { type: "ANON_LIMIT", remaining: 0 };
+  return {
+    type: "ANON",
+    remaining: 2,
+    limit: USAGE_LIMITS.ANON,
+  };
 }

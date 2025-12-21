@@ -1,10 +1,11 @@
 import React from "react";
 import { BaseTemplate } from "./BaseTemplate";
 
-export function PaperTemplate({ jsonResume }) {
+export function PaperTemplate({ jsonResume, renderTarget = "web" }) {
   return (
     <BaseTemplate
       jsonResume={jsonResume}
+      renderTarget={renderTarget}
 
       /* CONTAINER */
       containerClass="bg-white text-gray-900 font-serif p-10"
@@ -26,11 +27,10 @@ export function PaperTemplate({ jsonResume }) {
       itemSubtitleClass="text-sm text-gray-700"
       itemDateClass="text-xs text-gray-600"
       itemSummaryClass="italic text-gray-700 mt-2 text-sm"
-      highlightsListClass="list-disc list-inside text-base text-gray-800 mt-2 space-y-1"
+      highlightsListClass="list-disc list-inside text-base text-gray-800 mt-2"
 
       /* SKILLS */
       skillsTextClass="text-base text-gray-800"
     />
   );
 }
-

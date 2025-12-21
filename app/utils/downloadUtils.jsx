@@ -1,13 +1,39 @@
 import ReactDOMServer from 'react-dom/server';
 import { TEMPLATES } from '../components/resume-templates';
 
-export async function generateThemedHTML(jsonResume, theme = 'even') {
+export async function generateThemedHTML(jsonResume, theme = 'even', {target = "web"} = {}) {
   const Template = TEMPLATES[theme] || TEMPLATES.even;
   
   // Render template to string
   const html = ReactDOMServer.renderToString(
-    <Template jsonResume={jsonResume} />
+    <Template jsonResume={jsonResume} renderTarget={target}/>
   );
+
+  // Render word
+  if (target === "word") {
+    return `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8" />
+          <style>
+            body {
+              font-family: Arial, Helvetica, sans-serif;
+              font-size: 12pt;
+              color: #111;
+            }
+            h1 { font-size: 20pt; margin-bottom: 8px; }
+            h2 { font-size: 14pt; margin-bottom: 6px; }
+            p  { margin: 4px 0; }
+            ul { margin-left: 18px; }
+          </style>
+        </head>
+        <body>
+          ${html}
+        </body>
+      </html>
+    `;
+  }
   
   // Wrap with basic HTML structure and Tailwind
   return `

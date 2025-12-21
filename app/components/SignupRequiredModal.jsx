@@ -9,8 +9,8 @@ export default function SignupRequiredModal({ show, onClose }) {
       <div className="bg-white p-6 rounded-lg shadow-lg w-80">
         <h2 className="text-lg font-bold mb-2">Create an account</h2>
         <p className="text-sm mb-4">
-          You’ve used your 3 free anonymous rewrites.  
-          Create an account to unlock <strong>7 additional free rewrites</strong>.
+          You’ve used your 2 free anonymous rewrites.  
+          Create an account to unlock <strong>3 additional free rewrites</strong>.
         </p>
 
         <div className="flex justify-between">

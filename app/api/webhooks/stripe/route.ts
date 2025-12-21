@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import Stripe from "stripe";
 import { db } from "@/db";
-import { subscriptions, userProfiles } from "@/db/schema";
+import { subscriptions, userProfiles, stripeEvents } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
 export const runtime = "nodejs";
@@ -34,110 +34,128 @@ export async function POST(req: Request) {
     return new NextResponse(`Webhook Error: ${err.message}`, { status: 400 });
   }
 
-  console.log("✅ Stripe event:", event.type);
+  /* --------------------------------------------------
+     IDEMPOTENCY CHECK (KEEP, BUT FIXED)
+  -------------------------------------------------- */
+  const alreadyProcessed = await db
+    .select()
+    .from(stripeEvents)
+    .where(eq(stripeEvents.id, event.id))
+    .limit(1);
+
+  if (alreadyProcessed.length > 0) {
+    return NextResponse.json({ received: true });
+  }
 
   // Helper to convert Stripe's unix seconds → JS Date
   const toDate = (unixSeconds: unknown): Date => {
-    const n = typeof unixSeconds === "number"
-      ? unixSeconds
-      : typeof unixSeconds === "string"
-      ? Number(unixSeconds)
-      : 0;
+    const n =
+      typeof unixSeconds === "number"
+        ? unixSeconds
+        : typeof unixSeconds === "string"
+        ? Number(unixSeconds)
+        : 0;
     return new Date(n * 1000);
   };
 
-  // -------------------------
-  // SUBSCRIPTION CREATED
-  // -------------------------
-  if (event.type === "customer.subscription.created") {
-    const sub = event.data.object as Stripe.Subscription;
-    const userId = sub.metadata?.userId;
+  /* --------------------------------------------------
+     PROCESS EVENT + RECORD (ATOMIC)
+  -------------------------------------------------- */
+  try {
+    await db.transaction(async (tx) => {
+      // -------------------------
+      // SUBSCRIPTION CREATED
+      // -------------------------
+      if (event.type === "customer.subscription.created") {
+        const sub = event.data.object as Stripe.Subscription;
+        const userId = sub.metadata?.userId;
 
-    if (!userId) {
-      console.error("❌ No userId in subscription metadata");
-      return NextResponse.json({ received: true });
-    }
+        if (!userId) {
+          console.error("❌ No userId in subscription metadata");
+          return;
+        }
 
-    console.log("📦 Subscription object (created):", sub.id);
+        const stripeCustomerId = sub.customer?.toString() ?? "";
+        const planId = sub.items.data[0]?.price?.id ?? "unknown";
+        const currentPeriodEnd = toDate((sub as any).current_period_end);
 
-    const stripeCustomerId = sub.customer?.toString() ?? "";
-    const planId = sub.items.data[0]?.price?.id ?? "unknown";
+        await tx
+          .insert(subscriptions)
+          .values({
+            id: crypto.randomUUID(),
+            userId,
+            stripeCustomerId,
+            stripeSubscriptionId: sub.id,
+            planId,
+            status: sub.status,
+            currentPeriodEnd,
+          })
+          .onConflictDoNothing(); // 👈 IMPORTANT
 
-    // IMPORTANT: Stripe gives unix seconds, Drizzle expects Date
-    const currentPeriodEnd = toDate((sub as any).current_period_end);
+        await tx
+          .update(userProfiles)
+          .set({ plan: "pro" })
+          .where(eq(userProfiles.userId, userId));
+      }
 
-    await db.insert(subscriptions).values({
-      id: crypto.randomUUID(),
-      userId,
-      stripeCustomerId,
-      stripeSubscriptionId: sub.id,
-      planId,
-      status: sub.status,
-      currentPeriodEnd,
+      // -------------------------
+      // SUBSCRIPTION UPDATED
+      // -------------------------
+      if (event.type === "customer.subscription.updated") {
+        const sub = event.data.object as Stripe.Subscription;
+        const userId = sub.metadata?.userId;
+
+        if (!userId) {
+          console.error("❌ No userId in subscription.updated metadata");
+          return;
+        }
+
+        const currentPeriodEnd = toDate((sub as any).current_period_end);
+
+        await tx
+          .update(subscriptions)
+          .set({
+            status: sub.status,
+            currentPeriodEnd,
+          })
+          .where(eq(subscriptions.stripeSubscriptionId, sub.id));
+
+        await tx
+          .update(userProfiles)
+          .set({ plan: sub.status === "active" ? "pro" : "free" })
+          .where(eq(userProfiles.userId, userId));
+      }
+
+      // -------------------------
+      // SUBSCRIPTION DELETED
+      // -------------------------
+      if (event.type === "customer.subscription.deleted") {
+        const sub = event.data.object as Stripe.Subscription;
+        const userId = sub.metadata?.userId;
+
+        if (!userId) {
+          console.error("❌ No userId in subscription.deleted metadata");
+          return;
+        }
+
+        await tx
+          .update(userProfiles)
+          .set({ plan: "free" })
+          .where(eq(userProfiles.userId, userId));
+      }
+
+      /* --------------------------------------------
+         RECORD EVENT (THIS WAS MISSING)
+      -------------------------------------------- */
+      await tx.insert(stripeEvents).values({
+        id: event.id,
+        type: event.type,
+        processedAt: new Date,
+      });
     });
-
-    console.log("📝 Inserted new subscription row");
-
-    await db
-      .update(userProfiles)
-      .set({ plan: "pro" })
-      .where(eq(userProfiles.userId, userId));
-
-    console.log("🌟 Updated user profile to PRO:", userId);
-  }
-
-  // -------------------------
-  // SUBSCRIPTION UPDATED
-  // -------------------------
-  if (event.type === "customer.subscription.updated") {
-    const sub = event.data.object as Stripe.Subscription;
-    const userId = sub.metadata?.userId;
-
-    if (!userId) {
-      console.error("❌ No userId in subscription.updated metadata");
-      return NextResponse.json({ received: true });
-    }
-
-    console.log("🔄 subscription updated:", sub.id, "status:", sub.status);
-
-    const currentPeriodEnd = toDate((sub as any).current_period_end);
-
-    await db
-      .update(subscriptions)
-      .set({
-        status: sub.status,
-        currentPeriodEnd,
-      })
-      .where(eq(subscriptions.stripeSubscriptionId, sub.id));
-
-    await db
-      .update(userProfiles)
-      .set({ plan: sub.status === "active" ? "pro" : "free" })
-      .where(eq(userProfiles.userId, userId));
-
-    console.log("🔁 Updated subscription row + user plan");
-  }
-
-  // -------------------------
-  // SUBSCRIPTION DELETED (canceled)
-  // -------------------------
-  if (event.type === "customer.subscription.deleted") {
-    const sub = event.data.object as Stripe.Subscription;
-    const userId = sub.metadata?.userId;
-
-    if (!userId) {
-      console.error("❌ No userId in subscription.deleted metadata");
-      return NextResponse.json({ received: true });
-    }
-
-    console.log("❌ Subscription deleted:", sub.id);
-
-    await db
-      .update(userProfiles)
-      .set({ plan: "free" })
-      .where(eq(userProfiles.userId, userId));
-
-    console.log("⬇️ Downgraded user to FREE:", userId);
+  } catch (err) {
+    console.error("❌ Stripe webhook processing failed:", err);
+    return new NextResponse("Webhook processing failed", { status: 500 });
   }
 
   return NextResponse.json({ received: true });
