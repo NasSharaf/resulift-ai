@@ -30,7 +30,7 @@ const Navbar = () => {
       <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
 
         {/* LEFT SIDE — Title */}
-        <MainHeader heading={"Resumatch.ai -> Get hired faster"}></MainHeader>
+        <MainHeader heading={"Resulift.ai -> Get hired faster"}></MainHeader>
 
         {/* RIGHT SIDE — Auth */}
         <div className="flex items-center gap-4">

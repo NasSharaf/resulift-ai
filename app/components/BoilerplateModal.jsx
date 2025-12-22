@@ -2,19 +2,19 @@ import React from "react";
 
 const content = {
   about: {
-    title: "About Resumatch",
+    title: "About Resulift",
     body: `
-Resumatch helps job seekers tailor resumes to specific roles by aligning them with job descriptions and applicant tracking system (ATS) criteria.
+Resulift helps job seekers tailor resumes to specific roles by aligning them with job descriptions and applicant tracking system (ATS) criteria.
 
 The goal is simple: reduce guesswork and help candidates understand how well their resume matches a role before applying.
 
-Resumatch is built for speed, clarity, and privacy.
+Resulift is built for speed, clarity, and privacy.
     `,
   },
   terms: {
     title: "Terms of Service",
     body: `
-Resumatch provides automated resume analysis and rewriting tools for informational purposes only. We do not guarantee interviews, job offers, or employment outcomes.
+Resulift provides automated resume analysis and rewriting tools for informational purposes only. We do not guarantee interviews, job offers, or employment outcomes.
 
 You are responsible for reviewing all generated content before use. The service is provided “as is” without warranties of any kind.
 
@@ -24,7 +24,7 @@ We reserve the right to modify or discontinue the service at any time.
   privacy: {
     title: "Privacy Policy",
     body: `
-Resumatch processes resumes and job descriptions solely to provide resume optimization services.
+Resulift processes resumes and job descriptions solely to provide resume optimization services.
 
 Uploaded content is not sold or shared with third parties. We collect only the minimum information required to operate the service.
 

@@ -19,7 +19,7 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata = {
-  title: 'Resumatch.ai',
+  title: 'Resulift.ai',
   description: 'Resume + Job Description = Success!',
 }
 

@@ -360,9 +360,9 @@ export default function Home() {
   if (isIncognito) {
     return (
       <div className="flex flex-col items-center justify-center h-screen text-center px-6">
-        <h1 className="text-2xl font-bold mb-4">🚫 Resumatch is not available in Private Browsing Mode</h1>
+        <h1 className="text-2xl font-bold mb-4">🚫 Resulift is not available in Private Browsing Mode</h1>
         <p className="text-gray-600 text-md max-w-md">
-          Please open Resumatch in a normal browser window to use your free resume rewrites.
+          Please open Resulift in a normal browser window to use your free resume rewrites.
         </p>
       </div>
     );
