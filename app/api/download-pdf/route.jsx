@@ -6,6 +6,10 @@ import { renderResumeHTML } from "@/renderTemplate";
 import puppeteer from "puppeteer-core";
 import chromium from "@sparticuz/chromium";
 
+chromium.setHeadlessMode = true;
+chromium.setGraphicsMode = false;
+
+
 const isVercel = !!process.env.VERCEL;
 
 export async function POST(req) {
@@ -18,6 +22,9 @@ export async function POST(req) {
     // Render React → HTML
     const html = await renderResumeHTML(jsonResume, theme);
 
+    // logging for chrome
+    const execPath = await chromium.executablePath();
+    console.log("Chromium exec path:", execPath);
     // Launch Puppeteer
     const browser = await puppeteer.launch(
       isVercel
