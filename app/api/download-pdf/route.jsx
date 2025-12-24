@@ -4,7 +4,7 @@ export const runtime = "nodejs";
 import { NextResponse } from "next/server";
 import { renderResumeHTML } from "@/renderTemplate";
 import puppeteer from "puppeteer-core";
-import chromium from "@sparticuz/chromium";
+import chromium from "@sparticuz/chromium-min";
 
 // Comprehensive environment detection
 const isProd = process.env.NODE_ENV === "production";
