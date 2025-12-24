@@ -9,7 +9,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { checkAndConsumeUsage } from "@/app/utils/usageLimits";
 
-export const maxDuration = 60;
+export const maxDuration = 95;
 
 /**
  * Helper: URL field that tolerates:
