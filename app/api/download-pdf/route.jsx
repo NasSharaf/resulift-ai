@@ -6,7 +6,7 @@ import { renderResumeHTML } from "@/renderTemplate";
 import puppeteer from "puppeteer-core";
 import chromium from "@sparticuz/chromium";
 
-const isProd = process.env.NODE_ENV === "production";
+const isVercel = !!process.env.VERCEL;
 
 export async function POST(req) {
   try {
@@ -20,7 +20,7 @@ export async function POST(req) {
 
     // Launch Puppeteer
     const browser = await puppeteer.launch(
-      isProd
+      isVercel
         ? {
             args: chromium.args,
             defaultViewport: chromium.defaultViewport,
@@ -28,7 +28,7 @@ export async function POST(req) {
             headless: chromium.headless,
           }
         : {
-            channel: "chrome", // 👈 THIS FIXES IT
+            channel: "chrome",
             headless: "new",
           }
     );
