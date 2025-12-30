@@ -2,6 +2,7 @@ import { Metadata } from 'next'
 import {
   ClerkProvider
 } from '@clerk/nextjs'
+import { Analytics } from '@vercel/analytics/next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import { instrumentSans } from "./styles/fonts";
 import Navbar from "./Navbar";
@@ -37,6 +38,7 @@ export default function RootLayout({
           </main>
 
           <Footer />
+          <Analytics />
         </body>
       </html>
     </ClerkProvider>
