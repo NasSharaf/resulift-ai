@@ -6,7 +6,7 @@ import { cookies } from "next/headers";
 import { db } from "@/db";
 import { userProfiles, anonymousVisitors } from "@/db/schema";
 import { eq } from "drizzle-orm";
-import { isSubscribed, getUsageStatus } from "@/app/utils/usageLimits";
+import { isSubscribed, getUsageStatus, isAdmin } from "@/app/utils/usageLimits";
 
 export async function GET(req: NextRequest) {
   const { userId } = getAuth(req);
@@ -35,10 +35,11 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       isLoggedIn: true,
       isSubscribed: subscribed,
+      isAdmin: isAdmin(userId),
       tier: subscribed ? "paid" : "free",
 
       remaining: usage.remaining,
-      limit: usage.limit,          
+      limit: usage.limit,
 
       referralCode: profile?.referralCode ?? null,
       referralLink,

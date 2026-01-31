@@ -24,13 +24,16 @@ const Navbar = () => {
   useEffect(() => setIsClient(true), []);
 
   const isSubscribed = userInfo?.isSubscribed;
+  const isAdmin = userInfo?.isAdmin;
 
   return (
     <nav className="fixed top-0 left-0 z-20 w-full h-16 bg-gray-50/90 backdrop-blur-sm border-b border-gray-200">
       <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
 
         {/* LEFT SIDE — Title */}
-        <MainHeader heading={"Resulift.ai -> Get hired faster"}></MainHeader>
+        <a href="/" className="cursor-pointer hover:opacity-80 transition">
+          <MainHeader heading={"Resulift.ai -> Get hired faster"}></MainHeader>
+        </a>
 
         {/* RIGHT SIDE — Auth */}
         <div className="flex items-center gap-4">
@@ -49,6 +52,14 @@ const Navbar = () => {
           </SignedOut>
 
           <SignedIn>
+            {isAdmin && (
+              <a
+                href="/admin"
+                className="px-4 py-2 rounded-full bg-purple-600 text-white text-sm font-semibold hover:bg-purple-700 transition"
+              >
+                Admin
+              </a>
+            )}
             <button
               onClick={() => {
                 fetch("/api/checkout", { method: "POST", credentials: "include" })

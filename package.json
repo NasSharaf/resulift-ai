@@ -54,6 +54,7 @@
     "react-burger-menu": "^3.0.9",
     "react-dom": "^19.2.3",
     "react-dropzone": "^14.3.5",
+    "recharts": "^3.6.0",
     "serpapi": "^1.1.1",
     "stripe": "^20.0.0",
     "supports-color": "^9.3.1",
