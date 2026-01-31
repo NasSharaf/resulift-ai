@@ -11,7 +11,7 @@ export const USAGE_LIMITS = {
 /* ---------------------------------------------------------
    GET SUBSCRIPTION STATE
 --------------------------------------------------------- */
-function isAdmin(userId?: string | null) {
+export function isAdmin(userId?: string | null) {
   if (!userId) return false;
   const admins = process.env.ADMIN_USER_IDS?.split(",") ?? [];
   return admins.includes(userId);
