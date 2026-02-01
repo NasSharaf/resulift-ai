@@ -41,6 +41,8 @@ export const tailoredResumes = sqliteTable("tailored_resumes", {
   resumeId: text("resume_id").notNull(),
   jobId: text("job_id").notNull(),
   tailoredText: text("tailored_text").notNull(),
+  atsScoreBefore: integer("ats_score_before"),
+  atsScoreAfter: integer("ats_score_after"),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
 });
 
@@ -73,4 +75,31 @@ export const stripeEvents = sqliteTable("stripe_events", {
   id: text("id").primaryKey(), // Stripe event ID
   type: text("type").notNull(),
   processedAt: integer("processed_at", { mode: "timestamp_ms" }).notNull(),
+});
+
+export const applications = sqliteTable("applications", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  jobId: text("job_id").notNull(),
+  tailoredResumeId: text("tailored_resume_id").notNull(),
+
+  // Core fields (extracted from job description or manual)
+  companyName: text("company_name"),
+  jobTitle: text("job_title"),
+
+  // Application tracking
+  applicationStatus: text("application_status").notNull().default("generated"),
+  // Enum: 'generated', 'applied', 'interviewing', 'offer', 'rejected', 'withdrawn'
+  appliedAt: integer("applied_at", { mode: "timestamp" }),
+
+  // ATS scores (copied from tailoredResumes)
+  atsScoreBefore: integer("ats_score_before"),
+  atsScoreAfter: integer("ats_score_after"),
+
+  // User editable
+  notes: text("notes"),
+
+  // Timestamps
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
 });

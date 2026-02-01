@@ -230,6 +230,7 @@ export default function Home() {
       const reader = rewriteRes.body.getReader();
       const decoder = new TextDecoder();
       let buffer = "";
+      let finalJsonResume = null;
 
       while (true) {
         const { done, value } = await reader.read();
@@ -248,6 +249,7 @@ export default function Home() {
 
               if (data.done && data.jsonResume) {
                 console.log(data);
+                finalJsonResume = data.jsonResume;
                 setJsonResume(data.jsonResume);
                 setUserInfo(prev =>
                   prev && !prev.isSubscribed
@@ -281,7 +283,12 @@ export default function Home() {
       const jobData = await jobRes.json();
       const jobId = jobData.jobId;
 
-      // Save tailored resume
+      // Save tailored resume with ATS scores from the final response
+      const atsScoreBefore = finalJsonResume?.atsScore?.totalScore || null;
+      const atsScoreAfter = finalJsonResume?.atsScore_rewrite?.totalScore || null;
+
+      console.log('Saving ATS scores:', { atsScoreBefore, atsScoreAfter });
+
       const tailoredResumeRes = await fetch("/api/tailored-resume", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -289,7 +296,9 @@ export default function Home() {
         body: JSON.stringify({
           resumeId: uploadData.resumeId,
           jobId: jobId,
-          tailoredText: JSON.stringify(jsonResume)
+          tailoredText: JSON.stringify(jsonResume),
+          atsScoreBefore: atsScoreBefore,
+          atsScoreAfter: atsScoreAfter,
         }),
       });
 

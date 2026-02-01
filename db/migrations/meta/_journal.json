@@ -13,6 +13,13 @@
       "when": 1766355921821,
       "tag": "0001_polite_abomination",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1769899099104,
+      "tag": "0002_flat_flatman",
+      "breakpoints": true
     }
   ]
 }

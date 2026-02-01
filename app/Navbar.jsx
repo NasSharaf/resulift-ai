@@ -60,13 +60,19 @@ const Navbar = () => {
                 Admin
               </a>
             )}
+            <a
+              href="/applications"
+              className="px-4 py-2 rounded-full bg-black text-white text-sm font-semibold hover:bg-gray-800 transition"
+            >
+              My Applications
+            </a>
             <button
               onClick={() => {
                 fetch("/api/checkout", { method: "POST", credentials: "include" })
                   .then(r => r.json())
                   .then(d => window.location.href = d.url);
               }}
-              className="px-4 py-2 rounded-full bg-black text-white text-sm font-semibold hover:bg-gray-800 transition"
+              className="px-4 py-2 rounded-full bg-gray-600 text-white text-sm font-semibold hover:bg-gray-800 transition"
             >
               Upgrade
             </button>
