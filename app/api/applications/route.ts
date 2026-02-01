@@ -21,15 +21,25 @@ export async function GET(req: NextRequest) {
     const sortBy = searchParams.get("sortBy") || "createdAt";
     const sortOrder = searchParams.get("sortOrder") || "desc";
 
+    // Type-safe column mapping for sorting
+    const validSortColumns = {
+      createdAt: applications.createdAt,
+      updatedAt: applications.updatedAt,
+      companyName: applications.companyName,
+      jobTitle: applications.jobTitle,
+      applicationStatus: applications.applicationStatus,
+      appliedAt: applications.appliedAt,
+    };
+
+    const sortColumn = validSortColumns[sortBy as keyof typeof validSortColumns] || applications.createdAt;
+
     // Fetch applications for this user
     const userApplications = await db
       .select()
       .from(applications)
       .where(eq(applications.userId, userId))
       .orderBy(
-        sortOrder === "asc"
-          ? asc(applications[sortBy as keyof typeof applications] || applications.createdAt)
-          : desc(applications[sortBy as keyof typeof applications] || applications.createdAt)
+        sortOrder === "asc" ? asc(sortColumn) : desc(sortColumn)
       );
 
     // Calculate ATS improvement percentage
