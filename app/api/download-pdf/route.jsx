@@ -12,7 +12,7 @@ export async function POST(req) {
 
     const html = await renderResumeHTML(jsonResume, theme);
 
-    const pdfRes = await fetch("https://resulift-pdf.fly.dev/pdf", {
+    const pdfRes = await fetch("https://resulift-pdf-2.fly.dev/pdf", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ html }),
