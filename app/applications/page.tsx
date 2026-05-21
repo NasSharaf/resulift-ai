@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 interface Application {
   id: string;
@@ -27,6 +28,7 @@ const STATUS_OPTIONS = [
 
 export default function ApplicationsPage() {
   const router = useRouter();
+  const isMobile = useIsMobile();
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -164,8 +166,8 @@ export default function ApplicationsPage() {
 
   return (
     <div className="pt-7 px-6 max-w-7xl mx-auto pb-12">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">My Applications</h1>
+      <div className="flex flex-wrap justify-between items-center mb-6 gap-3">
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-900">My Applications</h1>
         <div className="flex gap-2">
           <button
             onClick={() => handleExport('csv')}
@@ -196,39 +198,119 @@ export default function ApplicationsPage() {
             Applications will automatically appear here when you generate tailored resumes
           </p>
         </div>
+      ) : isMobile ? (
+        /* Mobile: card view */
+        <div className="flex flex-col gap-4">
+          {applications.map((app) => (
+            <div key={app.id} className="bg-white rounded-xl border border-gray-200 p-4 flex flex-col gap-3">
+              {/* Company + Title */}
+              <div>
+                <input
+                  type="text"
+                  value={app.companyName || ''}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setApplications(prev => prev.map(a => a.id === app.id ? { ...a, companyName: value } : a));
+                  }}
+                  onBlur={(e) => updateApplication(app.id, 'companyName', e.target.value)}
+                  className="w-full font-bold text-lg bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-1"
+                  placeholder="Company name"
+                />
+                <input
+                  type="text"
+                  value={app.jobTitle || ''}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setApplications(prev => prev.map(a => a.id === app.id ? { ...a, jobTitle: value } : a));
+                  }}
+                  onBlur={(e) => updateApplication(app.id, 'jobTitle', e.target.value)}
+                  className="w-full text-gray-600 bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-1 text-sm"
+                  placeholder="Job title"
+                />
+              </div>
+
+              {/* Status + Date */}
+              <div className="flex items-center justify-between">
+                <select
+                  value={app.applicationStatus}
+                  onChange={(e) => {
+                    const newStatus = e.target.value;
+                    if (newStatus === 'applied' && !app.appliedAt) {
+                      updateApplication(app.id, 'appliedAt', new Date().toISOString());
+                    }
+                    updateApplication(app.id, 'applicationStatus', newStatus);
+                  }}
+                  className={`rounded-full px-3 py-1 text-xs font-semibold border-none focus:outline-none focus:ring-2 focus:ring-blue-500 ${getStatusColor(app.applicationStatus)}`}
+                >
+                  {STATUS_OPTIONS.map(status => (
+                    <option key={status.value} value={status.value}>{status.label}</option>
+                  ))}
+                </select>
+                <input
+                  type="date"
+                  value={app.appliedAt ? new Date(app.appliedAt).toISOString().split('T')[0] : ''}
+                  onChange={(e) => {
+                    const value = e.target.value ? new Date(e.target.value).toISOString() : null;
+                    updateApplication(app.id, 'appliedAt', value);
+                  }}
+                  className="text-sm text-gray-500 bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-1"
+                />
+              </div>
+
+              {/* ATS scores */}
+              {(app.atsScoreBefore || app.atsScoreAfter) && (
+                <div className="flex items-center gap-3 text-sm">
+                  <span className="text-gray-500">ATS</span>
+                  <span className="font-medium">{app.atsScoreBefore ?? '-'}</span>
+                  <span className="text-gray-400">→</span>
+                  <span className="font-medium">{app.atsScoreAfter ?? '-'}</span>
+                  {app.atsImprovement !== null && (
+                    <span className={`font-semibold ml-1 ${app.atsImprovement > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      ({app.atsImprovement > 0 ? '+' : ''}{app.atsImprovement}%)
+                    </span>
+                  )}
+                </div>
+              )}
+
+              {/* Notes */}
+              <input
+                type="text"
+                value={app.notes || ''}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setApplications(prev => prev.map(a => a.id === app.id ? { ...a, notes: value } : a));
+                }}
+                onBlur={(e) => updateApplication(app.id, 'notes', e.target.value)}
+                className="w-full text-sm bg-gray-50 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 border border-gray-200"
+                placeholder="Add notes..."
+              />
+
+              {/* Delete */}
+              <button
+                onClick={() => deleteApplication(app.id)}
+                className="self-end text-red-600 hover:text-red-800 text-sm font-medium"
+              >
+                Delete
+              </button>
+            </div>
+          ))}
+        </div>
       ) : (
+        /* Desktop: table view */
         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-48">
-                    Company
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-56">
-                    Position
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-36">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
-                    Applied
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">
-                    ATS Before
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">
-                    ATS After
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-28">
-                    Improvement
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-64">
-                    Notes
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">
-                    Actions
-                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-48">Company</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-56">Position</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-36">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Applied</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">ATS Before</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">ATS After</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-28">Improvement</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-64">Notes</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">Actions</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -240,9 +322,7 @@ export default function ApplicationsPage() {
                         value={app.companyName || ''}
                         onChange={(e) => {
                           const value = e.target.value;
-                          setApplications(prev =>
-                            prev.map(a => (a.id === app.id ? { ...a, companyName: value } : a))
-                          );
+                          setApplications(prev => prev.map(a => (a.id === app.id ? { ...a, companyName: value } : a)));
                         }}
                         onBlur={(e) => updateApplication(app.id, 'companyName', e.target.value)}
                         className="w-full border-none bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1 text-sm"
@@ -255,9 +335,7 @@ export default function ApplicationsPage() {
                         value={app.jobTitle || ''}
                         onChange={(e) => {
                           const value = e.target.value;
-                          setApplications(prev =>
-                            prev.map(a => (a.id === app.id ? { ...a, jobTitle: value } : a))
-                          );
+                          setApplications(prev => prev.map(a => (a.id === app.id ? { ...a, jobTitle: value } : a)));
                         }}
                         onBlur={(e) => updateApplication(app.id, 'jobTitle', e.target.value)}
                         className="w-full border-none bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1 text-sm"
@@ -269,7 +347,6 @@ export default function ApplicationsPage() {
                         value={app.applicationStatus}
                         onChange={(e) => {
                           const newStatus = e.target.value;
-                          // Auto-fill applied date when status changes to "applied"
                           if (newStatus === 'applied' && !app.appliedAt) {
                             updateApplication(app.id, 'appliedAt', new Date().toISOString());
                           }
@@ -278,9 +355,7 @@ export default function ApplicationsPage() {
                         className={`rounded-full px-3 py-1 text-xs font-semibold border-none focus:outline-none focus:ring-2 focus:ring-blue-500 ${getStatusColor(app.applicationStatus)}`}
                       >
                         {STATUS_OPTIONS.map(status => (
-                          <option key={status.value} value={status.value}>
-                            {status.label}
-                          </option>
+                          <option key={status.value} value={status.value}>{status.label}</option>
                         ))}
                       </select>
                     </td>
@@ -295,12 +370,8 @@ export default function ApplicationsPage() {
                         className="border-none bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1 text-sm"
                       />
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {app.atsScoreBefore || '-'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {app.atsScoreAfter || '-'}
-                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{app.atsScoreBefore || '-'}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{app.atsScoreAfter || '-'}</td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {app.atsImprovement !== null ? (
                         <span className={`font-semibold ${app.atsImprovement > 0 ? 'text-green-600' : 'text-red-600'}`}>
@@ -316,9 +387,7 @@ export default function ApplicationsPage() {
                         value={app.notes || ''}
                         onChange={(e) => {
                           const value = e.target.value;
-                          setApplications(prev =>
-                            prev.map(a => (a.id === app.id ? { ...a, notes: value } : a))
-                          );
+                          setApplications(prev => prev.map(a => (a.id === app.id ? { ...a, notes: value } : a)));
                         }}
                         onBlur={(e) => updateApplication(app.id, 'notes', e.target.value)}
                         className="w-full border-none bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1 text-sm"
