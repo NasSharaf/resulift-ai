@@ -1,7 +1,7 @@
 // app/api/rewrite/route.jsx
 
 import { WebPDFLoader } from "@langchain/community/document_loaders/web/pdf";
-import { ChatOpenAI } from "@langchain/openai";
+import { ChatOllama } from "@langchain/ollama";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
 import { getAuth } from "@clerk/nextjs/server";
 import { cookies } from "next/headers";
@@ -416,8 +416,9 @@ export async function POST(req) {
     }
 
     // 2) LLM with streaming (no structured parser in the chain — we do soft validation after)
-    const llm = new ChatOpenAI({
-      model: "gpt-5-mini",
+    const llm = new ChatOllama({
+      model: "llama3.1:8b",
+      baseUrl: "http://127.0.0.1:11434",
       streaming: true,
     });
 

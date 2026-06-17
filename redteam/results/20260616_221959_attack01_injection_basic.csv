@@ -1,0 +1,61 @@
+attempt,timestamp,latency_sec,injection_hit,json_valid,response_excerpt,error
+1,2026-06-16T22:19:59,0.03,,,,"RuntimeError: Strategy execution failed for objective_target in PromptSendingAttack: Error sending prompt with conversation ID: 14582fbb-74c2-4901-8816-c12f7792f3cf
+
+Root cause: ConnectError: [SSL] record layer fai"
+2,2026-06-16T22:19:59,0.01,,,,"RuntimeError: Strategy execution failed for objective_target in PromptSendingAttack: Error sending prompt with conversation ID: 94c49659-4b5c-43de-813d-a745f382db2e
+
+Root cause: ConnectError: [SSL] record layer fai"
+3,2026-06-16T22:19:59,0.02,,,,"RuntimeError: Strategy execution failed for objective_target in PromptSendingAttack: Error sending prompt with conversation ID: cc425db3-c0a1-43c5-8606-0d25cdaef7a2
+
+Root cause: ConnectError: [SSL] record layer fai"
+4,2026-06-16T22:19:59,0.01,,,,"RuntimeError: Strategy execution failed for objective_target in PromptSendingAttack: Error sending prompt with conversation ID: 61bb693c-85fa-4adf-983b-d27ed0a2fe87
+
+Root cause: ConnectError: [SSL] record layer fai"
+5,2026-06-16T22:19:59,0.01,,,,"RuntimeError: Strategy execution failed for objective_target in PromptSendingAttack: Error sending prompt with conversation ID: ea636461-1485-4557-b324-843d773dd839
+
+Root cause: ConnectError: [SSL] record layer fai"
+6,2026-06-16T22:19:59,0.01,,,,"RuntimeError: Strategy execution failed for objective_target in PromptSendingAttack: Error sending prompt with conversation ID: c632681b-0a0f-470d-94fa-19f84fa05c94
+
+Root cause: ConnectError: [SSL] record layer fai"
+7,2026-06-16T22:19:59,0.01,,,,"RuntimeError: Strategy execution failed for objective_target in PromptSendingAttack: Error sending prompt with conversation ID: dc17099d-ff0d-4dbc-92f7-8754c1682984
+
+Root cause: ConnectError: [SSL] record layer fai"
+8,2026-06-16T22:19:59,0.01,,,,"RuntimeError: Strategy execution failed for objective_target in PromptSendingAttack: Error sending prompt with conversation ID: 74a22112-8f71-4ed5-aa63-a5f55ad40744
+
+Root cause: ConnectError: [SSL] record layer fai"
+9,2026-06-16T22:19:59,0.01,,,,"RuntimeError: Strategy execution failed for objective_target in PromptSendingAttack: Error sending prompt with conversation ID: 2d45d252-0527-4029-8816-3104ba5f9cfb
+
+Root cause: ConnectError: [SSL] record layer fai"
+10,2026-06-16T22:19:59,0.02,,,,"RuntimeError: Strategy execution failed for objective_target in PromptSendingAttack: Error sending prompt with conversation ID: fa7a9d0e-f32a-4983-ab2d-59fbc010ebbd
+
+Root cause: ConnectError: [SSL] record layer fai"
+11,2026-06-16T22:19:59,0.01,,,,"RuntimeError: Strategy execution failed for objective_target in PromptSendingAttack: Error sending prompt with conversation ID: b7c0ad63-2b9c-4945-aab0-9694ebfc42f2
+
+Root cause: ConnectError: [SSL] record layer fai"
+12,2026-06-16T22:19:59,0.01,,,,"RuntimeError: Strategy execution failed for objective_target in PromptSendingAttack: Error sending prompt with conversation ID: 6cbf267d-7a03-46ec-918c-d0c6cc6e7e88
+
+Root cause: ConnectError: [SSL] record layer fai"
+13,2026-06-16T22:19:59,0.01,,,,"RuntimeError: Strategy execution failed for objective_target in PromptSendingAttack: Error sending prompt with conversation ID: 808998f2-e59c-4ec9-86fe-07b8823a22e5
+
+Root cause: ConnectError: [SSL] record layer fai"
+14,2026-06-16T22:19:59,0.01,,,,"RuntimeError: Strategy execution failed for objective_target in PromptSendingAttack: Error sending prompt with conversation ID: bda338ac-b304-4768-b1d1-407d55bc432f
+
+Root cause: ConnectError: [SSL] record layer fai"
+15,2026-06-16T22:19:59,0.01,,,,"RuntimeError: Strategy execution failed for objective_target in PromptSendingAttack: Error sending prompt with conversation ID: 964c6cb0-6e0f-4d5d-987e-c21c9dfb4ea6
+
+Root cause: ConnectError: [SSL] record layer fai"
+16,2026-06-16T22:19:59,0.01,,,,"RuntimeError: Strategy execution failed for objective_target in PromptSendingAttack: Error sending prompt with conversation ID: dadbcf1e-b342-4db1-a583-c5e4657eb445
+
+Root cause: ConnectError: [SSL] record layer fai"
+17,2026-06-16T22:19:59,0.01,,,,"RuntimeError: Strategy execution failed for objective_target in PromptSendingAttack: Error sending prompt with conversation ID: 81eb93ab-d67f-474b-ba31-eb1271cb722c
+
+Root cause: ConnectError: [SSL] record layer fai"
+18,2026-06-16T22:19:59,0.01,,,,"RuntimeError: Strategy execution failed for objective_target in PromptSendingAttack: Error sending prompt with conversation ID: 495e3eea-0dfa-4492-a60e-46e86b78285a
+
+Root cause: ConnectError: [SSL] record layer fai"
+19,2026-06-16T22:19:59,0.02,,,,"RuntimeError: Strategy execution failed for objective_target in PromptSendingAttack: Error sending prompt with conversation ID: a40689d8-c661-483b-b904-56d533f795f1
+
+Root cause: ConnectError: [SSL] record layer fai"
+20,2026-06-16T22:19:59,0.01,,,,"RuntimeError: Strategy execution failed for objective_target in PromptSendingAttack: Error sending prompt with conversation ID: c0ab7e6b-9298-4b5c-994a-cb17bf6f30b4
+
+Root cause: ConnectError: [SSL] record layer fai"
